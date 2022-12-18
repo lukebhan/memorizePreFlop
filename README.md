@@ -1,9 +1,11 @@
 # Memorize PreFlop
 
 Memorize Preflop is a simple tool for memorizing preflop ranges. It has a range builder, a chart trainer, hand traininer, and custom reporting system. It allows for users to custom train any set of ranges from both a chart and hand persepective. Intro video: video
-![Memorize PreFlop Demo Image](/images/mem1.png "Hand Trainer") ![Memorize PreFlop Demo Image](/images/mem2.png "Chart Trainer") ![Memorize PreFlop Demo Image](/images/mem3.png "Hand Training Report")
 
-<img src="images/mem1.png" width="425"/> <img src="images/mem2.png" width="425"/> 
+
+![Memorize PreFlop Demo Image](/images/mem1.png "Hand Trainer") 
+![Memorize PreFlop Demo Image](/images/mem2.png "Chart Trainer")
+![Memorize PreFlop Demo Image](/images/mem3.png "Hand Training Report")
 
 # Usage Demo
 Please checkout this youtube video for a simple example on how Memorize Preflop can be used!
