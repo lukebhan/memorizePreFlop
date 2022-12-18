@@ -4,7 +4,11 @@ Memorize Preflop is a simple tool for memorizing preflop ranges. It has a range 
 
 
 ![Memorize PreFlop Demo Image](/images/mem1.png "Hand Trainer") 
+
+
 ![Memorize PreFlop Demo Image](/images/mem2.png "Chart Trainer")
+
+
 ![Memorize PreFlop Demo Image](/images/mem3.png "Hand Training Report")
 
 # Usage Demo
