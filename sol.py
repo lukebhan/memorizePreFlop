@@ -11,6 +11,7 @@ from trainingReports import TrainingReports
 from rangeBuilder import RangeBuilder
 from handTrainer import HandTrainer
 from chartTrainer import ChartTrainer
+from reports import Report
 import numpy as np
 
 class simul(QMainWindow):
@@ -30,19 +31,21 @@ class simul(QMainWindow):
 
         self.tabWidget = QTabWidget()
 
-        self.tabWidget.addTab(self.rangeBuilderFunc(), "Range Builder")
-        self.tabWidget.addTab(self.chartTrainerFunc(), "Chart Trainer")
-        self.tabWidget.addTab(self.handTrainerFunc(), "Hand Trainer")
-        self.tabWidget.addTab(self.trainingReports(), "Training Reports")
+        self.tabWidget.insertTab(4, self.trainingReports(), "Training Reports")
+        self.tabWidget.insertTab(0, self.rangeBuilderFunc(), "Range Builder")
+        self.tabWidget.insertTab(1, self.chartTrainerFunc(), "Chart Trainer")
+        self.tabWidget.insertTab(2, self.handTrainerFunc(), "Hand Trainer")
         self.tabWidget.setFont(self.font(25))
+        self.tabWidget.setCurrentIndex(0)   
         self.innerLayout = QGridLayout()
         self.innerLayout.setContentsMargins(10, 10, 10, 10)
         self.layout.addLayout(self.innerLayout, 1, 0)
         self.innerLayout.addWidget(self.tabWidget, 1, 0)
 
-        self.curSelection = None
-        self.sceneDict = {}
-        self.sceneIsClear = True
+    def generateFirstReport(self):
+        if not hasattr(self, 'reports'):
+            comboMap, comboMapInverse = self.generateMap()
+            self.reports = Report(comboMap, comboMapInverse, "True")
 
     def generateMap(self):
         cards = ["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"]
@@ -73,17 +76,17 @@ class simul(QMainWindow):
         return self.rangeBuilder.getWindow()
 
     def handTrainerFunc(self):
-        comboMap, _ = self.generateMap()
-        self.handTrainer = HandTrainer(self, comboMap, self.font)
         return self.handTrainer.getWindow()
 
     def chartTrainerFunc(self):
-        comboMap, comboMapInverse = self.generateMap()
-        self.chartTrainer = ChartTrainer(self, comboMap, comboMapInverse, self.font)
         return self.chartTrainer.getWindow()
 
     def trainingReports(self):
-        self.trainingReports = TrainingReports()
+        comboMap, comboMapInverse = self.generateMap()
+        self.generateFirstReport()
+        self.trainingReports = TrainingReports(self, comboMap, comboMapInverse, self.font, self.reports)
+        self.chartTrainer = ChartTrainer(self, comboMap, comboMapInverse, self.font, self.reports)
+        self.handTrainer = HandTrainer(self, comboMap, self.font, self.reports)
         return self.trainingReports.getWindow()
 
 

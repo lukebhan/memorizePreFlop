@@ -10,7 +10,7 @@ from functools import partial
 import numpy as np
 
 class HandTrainer():
-    def __init__(self, main, comboMap, font):
+    def __init__(self, main, comboMap, font, report=None):
         self.generalTab = QWidget()
         self.mainLayout = QHBoxLayout()
 
@@ -20,6 +20,7 @@ class HandTrainer():
         self.sceneIsClear = True
         self.sceneDict = {}
         self.curSelection = None
+        self.report = report
 
     def buildMain(self):
         self.leftLayout = self.buildLeftLayout()
@@ -49,11 +50,23 @@ class HandTrainer():
     def buildRightLayout(self):
         rightLayout = QVBoxLayout()
         rightLayout.setContentsMargins(0, 100, 70, 70)
+        rightLayout.addWidget(self.trainingActive())
         rightLayout.addLayout(self.createResetAndStartButtons())
         rightLayout.addLayout(self.createAddDeleteClearButtons())
         rightLayout.addLayout(self.createRangeBrowser())
         rightLayout.addWidget(self.createActiveScenariosListing())
         return rightLayout
+
+    def trainingActive(self):
+        self.trainingLabel = QLabel()
+        self.trainingLabel.setFont(self.font(15))
+        if self.report.isActive():
+            self.trainingLabel.setText("Reporting Active")
+            self.trainingLabel.setStyleSheet('color: green')
+        else:
+            self.trainingLabel.setText("Reporting Inactive")
+            self.trainingLabel.setStyleSheet('color: red')
+        return self.trainingLabel
 
     def createResetAndStartButtons(self):
         resetStartButtonLayout = QHBoxLayout()
@@ -266,6 +279,8 @@ class HandTrainer():
     def scenarioRaiseButtonCallback(self):
         raiseWeight, callWeight, foldWeight = self.getWeights()
         if float(self.randomInt) / 100.0 >= callWeight+foldWeight:
+            if self.report.isActive():
+                self.report.addHandData(self.res, self.hand, True, 1, True)
             if self.scoreLabel.text() == "":
                 self.scoreLabel.setText("Score: 1/1")
             else:
@@ -273,6 +288,8 @@ class HandTrainer():
                 self.scoreLabel.setText("Score: " + str(int(num)+1) + "/" + str(int(dom)+1))
             self.generateTrainingScenario()
         else:
+            if self.report.isActive():
+                self.report.addHandData(self.res, self.hand, False, 1, True)
             if self.scoreLabel.text() == "":
                 self.scoreLabel.setText("Score: 0/1")
             else:
@@ -284,6 +301,8 @@ class HandTrainer():
     def scenarioCallButtonCallback(self):
         raiseWeight, callWeight, foldWeight = self.getWeights()
         if float(self.randomInt) / 100.0 >= foldWeight and self.randomInt/100 < (callWeight+foldWeight):
+            if self.report.isActive():
+                self.report.addHandData(self.res, self.hand, True, 2, True)
             if self.scoreLabel.text() == "":
                 self.scoreLabel.setText("Score: 1/1")
             else:
@@ -291,6 +310,8 @@ class HandTrainer():
                 self.scoreLabel.setText("Score: " + str(int(num)+1) + "/" + str(int(dom)+1))
             self.generateTrainingScenario()
         else:
+            if self.report.isActive():
+                self.report.addHandData(self.res, self.hand, False, 2, True)
             if self.scoreLabel.text() == "":
                 self.scoreLabel.setText("Score: 0/1")
             else:
@@ -302,6 +323,8 @@ class HandTrainer():
     def scenarioFoldButtonCallback(self):
         raiseWeight, callWeight, foldWeight = self.getWeights()
         if float(self.randomInt) / 100.0 < foldWeight:
+            if self.report.isActive():
+                self.report.addHandData(self.res, self.hand, True, 3, True)
             if self.scoreLabel.text() == "":
                 self.scoreLabel.setText("Score: 1/1")
             else:
@@ -309,6 +332,8 @@ class HandTrainer():
                 self.scoreLabel.setText("Score: " + str(int(num)+1) + "/" + str(int(dom)+1))
             self.generateTrainingScenario()
         else:
+            if self.report.isActive():
+                self.report.addHandData(self.res, self.hand, False, 3, True)
             if self.scoreLabel.text() == "":
                 self.scoreLabel.setText("Score: 0/1")
             else:
@@ -365,7 +390,6 @@ class HandTrainer():
         weightDict = self.sceneDict[self.problemLabel]
         raiseWeight = 0
         callWeight = 0
-        print(self.hand)
         for val in weightDict["raise"]:
             if self.hand in val[0]:
                 raiseWeight += float(val[1])
@@ -373,9 +397,6 @@ class HandTrainer():
             for val in weightDict["call"]:
                 if self.hand in val[0]:
                     callWeight += float(val[1])
-        print(self.problemLabel)
-        print(weightDict)
-        print(raiseWeight, callWeight)
         return raiseWeight, callWeight, 1-raiseWeight-callWeight
 
     def clearLayout(self, layout):
@@ -388,6 +409,12 @@ class HandTrainer():
                 self.clearLayout(child.layout())
 
     def generateTrainingScenario(self):
+        if self.report.isActive():
+            self.trainingLabel.setText("Reporting Active")
+            self.trainingLabel.setStyleSheet('color: green')
+        else:
+            self.trainingLabel.setText("Reporting Inactive")
+            self.trainingLabel.setStyleSheet('color: red')
         self.clearLayout(self.sceneButtonLayout)
         self.createSceneButtons()
         self.leftTrainerLayout.addLayout(self.sceneButtonLayout)
@@ -402,10 +429,10 @@ class HandTrainer():
         splitName = self.problemLabel.split("/")
         splitName = splitName[-1].split(".")
         splitName = splitName[0].split("_")
-        res = ""
+        self.res = ""
         for val in splitName:
-            res += val +" "
-        self.curProblemName.setText("Spot: " + res)
+            self.res += val +" "
+        self.curProblemName.setText("Spot: " + self.res)
 
     def updateScenarioRandomizer(self):
         self.randomInt = np.random.randint(0, 100)

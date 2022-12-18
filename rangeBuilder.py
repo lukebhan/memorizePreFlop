@@ -5,6 +5,7 @@ from PyQt5.QtGui import *
 from customButton import DrawRangeButton
 from functools import partial
 from colorPicker import ColorButton
+from dragWidget import DragWidget
 from parser import *
 import os
 
@@ -18,9 +19,13 @@ class RangeBuilder():
         self.buttonPushMap = []
         # function for font building
         self.font = font
-        self.raiseColor = "#90EE90"
-        self.callColor = "#FFCCCB"
+        self.callColor = "#90EE90"
+        self.raiseColor = "#FFCCCB"
         self.main = mainWindow
+        self.callVal = 0
+        self.raiseVal = 0
+        self.xIdx = -1
+        self.yIdx = -1
 
     def buildMain(self):
         self.leftLayout = self.buildLeftLayout()
@@ -34,10 +39,11 @@ class RangeBuilder():
         return self.generalTab
 
     def buildLeftLayout(self):
-        leftLayout = QHBoxLayout()
-        leftLayout.setContentsMargins(70, 70, 70, 70)
-        leftLayout.setSpacing(0)
-        leftLayout.addLayout(self.buildButtonLayout())
+        leftLayout = QVBoxLayout()
+        leftLayout.setContentsMargins(70, 70, 70, 0)
+        leftLayout.addWidget(self.buildButtonLayout())
+        leftLayout.addLayout(self.buildPercentageLabelLayout())
+        leftLayout.addStretch()
         return leftLayout
 
     def buildRightLayout(self):
@@ -54,11 +60,24 @@ class RangeBuilder():
         rightLayout.addLayout(self.createRangeBrowser())
         rightLayout.addLayout(self.createDependencyLabel())
         rightLayout.addLayout(self.createDependencyBrowser())
+        rightLayout.addStretch()
         return rightLayout
+
+    def buildPercentageLabelLayout(self):
+        self.percentLabel = QLabel(alignment=Qt.AlignLeft)
+        self.percentLabel.setText("Total: 0.00 Raise: 0.00 Call: 0.00 Fold: 100.00")
+        percentLabel = QHBoxLayout()
+        percentLabel.addWidget(self.percentLabel)
+        percentLabel.setContentsMargins(0, 20, 0, 0)
+        return percentLabel
 
     def buildButtonLayout(self):
         buttonMainLayout = QHBoxLayout()
         buttonMainLayout.setSpacing(0)
+
+        self.buttonWidget = DragWidget()
+        self.buttonWidget.setLayout(buttonMainLayout)
+        self.buttonWidget.drag.connect(self.addDragButton)
 
         # Build out button matrix 
         self.firstButton = None
@@ -69,18 +88,18 @@ class RangeBuilder():
                 button = DrawRangeButton("#36454F", self.comboMap[i][j])
                 button.setFont(self.font(30))
                 buttonSubLayout.addWidget(button)
-                button.clicked.connect(partial(self.fillButton, (button, [i,j])))
                 buttonArr.append(button)
+                button.pressed.connect(partial(self.fillPressButton, (button, ([i, j]))))
             buttonMainLayout.addLayout(buttonSubLayout)
             self.buttonPushMap.append(buttonArr)
-        return buttonMainLayout
+        return self.buttonWidget
     
     def createRaiseCallButtons(self):
         # Values is 
         self.raiseCallButtonValue = 1
 
         raiseButtonLayout = QHBoxLayout()
-        self.raiseColorButton = ColorButton(color="#90EE90", callbackFunc=self.updateRaiseColor)
+        self.raiseColorButton = ColorButton(color=self.raiseColor, callbackFunc=self.updateRaiseColor)
         raiseButton = QRadioButton(" Raise  ")
         raiseButton.setChecked(True)
         raiseButton.setFont(self.font(30))
@@ -95,7 +114,7 @@ class RangeBuilder():
         raiseButtonLayout.addWidget(QLabel("  "))
     
         callButtonLayout = QHBoxLayout()
-        self.callColorButton = ColorButton(color="#FFCCCB", callbackFunc=self.updateCallColor)
+        self.callColorButton = ColorButton(color=self.callColor, callbackFunc=self.updateCallColor)
         callButton = QRadioButton(" Call   ")
         callButton.setStyleSheet("QRadioButton::indicator"
                                         "{"
@@ -172,21 +191,22 @@ class RangeBuilder():
         clearSaveLoadButtonLayout.addWidget(clearButton)
         clearSaveLoadButtonLayout.addWidget(saveButton)
         clearSaveLoadButtonLayout.addWidget(loadButton)
+        clearSaveLoadButtonLayout.setContentsMargins(0, 40, 20, 20)
         return clearSaveLoadButtonLayout
 
     def createRangeBrowser(self):
         rangeEditLayout = QHBoxLayout()
-        rangeEditLayout.setContentsMargins(0, 0, 40, 0)
 
         self.rangeLineEdit = QLineEdit()
-        self.rangeLineEdit.setFont(self.font(8))
+        self.rangeLineEdit.setFont(self.font(10))
         self.rangeLineEdit.setText("ranges/")
 
         browseButton = QPushButton("Browse")
-        browseButton.setFont(self.font(10))
+        browseButton.setFont(self.font(14))
         browseButton.clicked.connect(self.rangeBrowserButtonCallback)
         rangeEditLayout.addWidget(browseButton)
         rangeEditLayout.addWidget(self.rangeLineEdit)
+        rangeEditLayout.setContentsMargins(0, 0, 20, 20)
         return rangeEditLayout
 
     def rangeBrowserButtonCallback(self):
@@ -198,20 +218,20 @@ class RangeBuilder():
     def createDependencyLabel(self):
         dependencyLayout = QHBoxLayout()
         dependencyLayoutLabel = QLabel("Testing Hands to Include:")
-        dependencyLayoutLabel.setFont(self.font(12))
+        dependencyLayoutLabel.setFont(self.font(20))
         dependencyLayout.addWidget(dependencyLayoutLabel)
         return dependencyLayout
  
     def createDependencyBrowser(self):
         dependencyEditLayout = QHBoxLayout()
-        dependencyEditLayout.setContentsMargins(0, 0, 40, 0)
+        dependencyEditLayout.setContentsMargins(0, 0, 20, 0)
 
         self.dependencyLineEdit = QLineEdit()
-        self.dependencyLineEdit.setFont(self.font(8))
+        self.dependencyLineEdit.setFont(self.font(10))
         self.dependencyLineEdit.setText("")
 
         browseButton = QPushButton("Browse")
-        browseButton.setFont(self.font(10))
+        browseButton.setFont(self.font(14))
         browseButton.clicked.connect(self.dependencyBrowserButtonCallback)
 
         dependencyEditLayout.addWidget(browseButton)
@@ -303,17 +323,59 @@ class RangeBuilder():
     def parseFileToDictionary(self, filename):
         return parseLines(filename)
 
+    def addDragButton(self, position):
+        widthRatio = self.buttonWidget.width()/13.0
+        heightRatio = self.buttonWidget.height()/13.0
+        xIdx = int(position.x()/widthRatio)
+        yIdx = int(position.y()/heightRatio)
+        if xIdx != self.xIdx or yIdx != self.yIdx:
+            if xIdx < 13 and xIdx > -1 and yIdx < 13 and yIdx > -1:
+                self.xIdx = xIdx
+                self.yIdx = yIdx
+                self.fillButton((self.buttonPushMap[xIdx][yIdx], [xIdx, yIdx]))
+
+    def fillPressButton(self, button):
+        self.xIdx = button[1][0]
+        self.yIdx = button[1][1]
+        self.fillButton(button)
+
     def fillButton(self, button):
         # button contains the index that was pressed
         # button is of the form (button, [i, j])
         if self.raiseCallButtonValue == 1:
-            button[0].changeColorAndScale(self.raiseColor, float(self.raiseSliderLabel.text())/100.0, 1)
+            curValue = button[0].getRaiseScale()
+            if button[1][0] > button[1][1]:
+                self.raiseVal -= curValue*4
+                button[0].changeColorAndScale(self.raiseColor, float(self.raiseSliderLabel.text())/100.0, 1)
+                self.raiseVal += button[0].getRaiseScale()*4
+            elif button[1][0] < button[1][1]:
+                self.raiseVal -= curValue*12
+                button[0].changeColorAndScale(self.raiseColor, float(self.raiseSliderLabel.text())/100.0, 1)
+                self.raiseVal += button[0].getRaiseScale()*12
+            else:
+                self.raiseVal -= curValue*6
+                button[0].changeColorAndScale(self.raiseColor, float(self.raiseSliderLabel.text())/100.0, 1)
+                self.raiseVal += button[0].getRaiseScale()*6
+
         else:
-            button[0].changeColorAndScale(self.callColor, float(self.callSliderLabel.text())/100.0, 0)
+            curValue = button[0].getCallScale()
+            if button[1][0] > button[1][1]:
+                self.callVal -= curValue*4
+                button[0].changeColorAndScale(self.callColor, float(self.callSliderLabel.text())/100.0, 0)
+                self.callVal += button[0].getCallScale()*4
+            elif button[1][0] < button[1][1]:
+                self.callVal -= curValue*12
+                button[0].changeColorAndScale(self.callColor, float(self.callSliderLabel.text())/100.0, 0)
+                self.callVal += button[0].getCallScale()*12
+            else:
+                self.callVal -= curValue*6
+                button[0].changeColorAndScale(self.callColor, float(self.callSliderLabel.text())/100.0, 0)
+                self.callVal += button[0].getCallScale()*6
+
+        self.percentLabel.setText("Total: " + "{:.2f}".format((self.callVal + self.raiseVal)/13.26)+" Raise: "+ "{:.2f}".format(self.raiseVal/13.26) + " Call: " + "{:.2f}".format(self.callVal/13.26) + " Fold: " + "{:.2f}".format((1326-self.callVal-self.raiseVal)/13.26))
+
 
     def redrawAllButtons(self, color, raiseOrCall):
         for val in self.buttonPushMap:
             for val2 in val:
                 val2.changeColor(color, raiseOrCall)
-
-

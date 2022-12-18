@@ -5,6 +5,7 @@ from PyQt5.QtGui import *
 
 
 class DrawRangeButton(QPushButton):
+    drag = QtCore.pyqtSignal(QtCore.QPoint)
     def __init__(self, mainColor, text):
         super().__init__()
         self.mainColor = mainColor
@@ -92,6 +93,7 @@ class DrawRangeButton(QPushButton):
 
     def markCorrect(self):
         self.incorrect=False
+        self.clear()
 
 class DrawScenarioButton(QPushButton):
     def __init__(self, text):
@@ -114,5 +116,51 @@ class DrawScenarioButton(QPushButton):
         else:
             self.selected = True
         self.update()
+
+class DrawReportButton(QPushButton):
+    def __init__(self, mainColor, text):
+        super().__init__()
+        self.text = text
+        self.mainColor = mainColor
+        self.curColor = mainColor
+
+    def paintEvent(self, event):
+        r = event.rect()
+        p = QPainter(self)
+        p.fillRect(0, 0, int(r.width()), int(r.height()), Qt.black)
+        p.fillRect(2, 2, int(r.width())-2, int(r.height())-2, QColor(self.curColor))
+        p.drawText(r, Qt.AlignCenter, self.text)
+
+    def updateButton(self, total, correct):
+        if total == 0:
+            self.curColor = self.mainColor
+        else:
+            percentage = float(correct)/float(total)
+            if percentage < 0.1:
+                self.curColor = "#FF0000"
+            elif percentage >= 0.1 and percentage < 0.2:
+                self.curColor = "#e73b00"
+            elif percentage >= 0.2 and percentage < 0.3:
+                self.curColor = "#ce5100"
+            elif percentage >= 0.3 and percentage < 0.4:
+                self.curColor = "#b45f00"
+            elif percentage >= 0.4 and percentage < 0.5:
+                self.curColor = "#9a6900"
+            elif percentage >= 0.5 and percentage < 0.6:
+                self.curColor = "#806f00"
+            elif percentage >= 0.6 and percentage < 0.7:
+                self.curColor = "#677200"
+            elif percentage >= 0.7 and percentage < 0.8:
+                self.curColor = "#4d7300"
+            elif percentage >= 0.8 and percentage < 0.9:
+                self.curColor = "#317300"
+            else:
+                self.curColor = "#027202"
+        self.update()
+            
+    def reset(self):
+        self.curColor = self.mainColor
+        self.update()
+
 
 

@@ -6,13 +6,14 @@ from customButton import DrawRangeButton
 from customButton import DrawScenarioButton
 from functools import partial
 from colorPicker import ColorButton
+from dragWidget import DragWidget
 from parser import *
 import os
 from glob import glob
 import numpy as np
 
 class ChartTrainer():
-    def __init__(self, mainWindow, comboMap, comboMapInverse, font):
+    def __init__(self, mainWindow, comboMap, comboMapInverse, font, report):
         self.generalTab = QWidget()
         self.mainLayout = QHBoxLayout()
 
@@ -28,6 +29,9 @@ class ChartTrainer():
         self.curSelection = None
         self.tol = 0.05
         self.score = "Score: "
+        self.xIdx = -1
+        self.yIdx = -1
+        self.report = report
 
     def buildMain(self):
         self.leftLayout = self.buildLeftLayout()
@@ -63,7 +67,8 @@ class ChartTrainer():
 
     def addLeftLayoutComponents(self):
         self.leftLeftLayout.addLayout(self.createProblemLabel())
-        self.leftLeftLayout.addLayout(self.buildButtonLayout())
+        self.leftLeftLayout.addWidget(self.buildButtonLayout())
+        self.leftLeftLayout.addStretch()
 
         self.dynamicCheckLayout.addLayout(self.createCheckButton())
         raiseButton, callButton = self.createRaiseCallButtons()
@@ -90,6 +95,11 @@ class ChartTrainer():
 
     def buildButtonLayout(self):
         buttonMainLayout = QHBoxLayout()
+        buttonMainLayout.setSpacing(0)
+
+        self.buttonWidget = DragWidget()
+        self.buttonWidget.setLayout(buttonMainLayout)
+        self.buttonWidget.drag.connect(self.addDragButton)
 
         # Build out button matrix 
         self.firstButton = None
@@ -98,14 +108,14 @@ class ChartTrainer():
             buttonArr = []
             for j in range(13):
                 button = DrawRangeButton("#36454F", self.comboMap[i][j])
-                button.setFont(self.font(16))
+                button.setFont(self.font(25))
                 buttonSubLayout.addWidget(button)
-                button.clicked.connect(partial(self.fillButton, (button, [i,j])))
+                button.pressed.connect(partial(self.fillPressButton, (button, [i,j])))
                 buttonArr.append(button)
             buttonSubLayout.addStretch()
             buttonMainLayout.addLayout(buttonSubLayout)
             self.buttonPushMap.append(buttonArr)
-        return buttonMainLayout
+        return self.buttonWidget
     
     def createRaiseCallButtons(self):
         # Values is 
@@ -232,6 +242,22 @@ class ChartTrainer():
     def parseFileToDictionary(self, filename):
         return parseLines(filename)
 
+    def addDragButton(self, position):
+        widthRatio = self.buttonWidget.width()/13.0
+        heightRatio = self.buttonWidget.height()/13.0
+        xIdx = int(position.x()/widthRatio)
+        yIdx = int(position.y()/heightRatio)
+        if xIdx != self.xIdx or yIdx != self.yIdx:
+            if xIdx < 13 and xIdx > -1 and yIdx < 13 and yIdx > -1:
+                self.xIdx = xIdx
+                self.yIdx = yIdx
+                self.fillButton((self.buttonPushMap[xIdx][yIdx], [xIdx, yIdx]))
+
+    def fillPressButton(self, button):
+        self.xIdx = button[1][0]
+        self.yIdx = button[1][1]
+        self.fillButton(button)
+
     def fillButton(self, button):
         # button contains the index that was pressed
         # button is of the form (button, [i, j])
@@ -294,7 +320,6 @@ class ChartTrainer():
                 raiseScale = button.getRaiseScale()
                 callScale = button.getCallScale()
                 hand = self.comboMap[idx][idx2]
-                print(hand)
                 if hand in correctDictionaryRaise:
                     correctScale = correctDictionaryRaise[hand]
                     if raiseScale > correctScale + self.tol or raiseScale < correctScale -self.tol:
