@@ -1,6 +1,6 @@
 # Memorize PreFlop
 
-Memorize Preflop is a simple tool for memorizing preflop ranges. It has a range builder, a chart trainer, hand traininer, and custom reporting system. It allows for users to custom train any set of ranges from both a chart and hand persepective. Feel free to checkout the demo video here: <a href:https://www.youtube.com/watch?v=jHXeO7m5CgQ> Youtube </a>
+Memorize Preflop is a simple tool for memorizing preflop ranges. It has a range builder, a chart trainer, hand traininer, and custom reporting system. It allows for users to custom train any set of ranges from both a chart and hand persepective. Feel free to checkout the demo video here: <a href="https://www.youtube.com/watch?v=jHXeO7m5CgQ"> Youtube </a>
 
 
 ![Memorize PreFlop Demo Image](/images/mem1.png "Hand Trainer") 
@@ -12,7 +12,7 @@ Memorize Preflop is a simple tool for memorizing preflop ranges. It has a range 
 ![Memorize PreFlop Demo Image](/images/mem3.png "Hand Training Report")
 
 # Usage Demo
-Please checkout this youtube <a href=https://www.youtube.com/watch?v=jHXeO7m5CgQ> video</a> for a simple example on how Memorize Preflop can be used!
+Please checkout this youtube <a href="https://www.youtube.com/watch?v=jHXeO7m5CgQ"> video</a> for a simple example on how Memorize Preflop can be used!
 
 # Installation
 ## Windows
