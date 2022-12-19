@@ -37,7 +37,7 @@ Currently, MacOS and Linux binaries are not available (Will be available in earl
 MemorizePreFlop will always be **Free** and **Open Source**. Feel free to submit a pull request with any ideas or bugs you find. Also, if you don't want to go through solving the bug, feel free to make an issue.
 
 # License
-This is licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.en.html> GNU </a>.
+This is licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.en.html"> GNU </a>.
 
 
 
