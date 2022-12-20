@@ -260,6 +260,9 @@ class RangeBuilder():
         return clearSaveLoadLayout
 
     def clear(self):
+        self.raiseVal = 0
+        self.callVal = 0
+        self.percentLabel.setText("Total: " + "{:.2f}".format((self.callVal + self.raiseVal)/13.26)+" Raise: "+ "{:.2f}".format(self.raiseVal/13.26) + " Call: " + "{:.2f}".format(self.callVal/13.26) + " Fold: " + "{:.2f}".format((1326-self.callVal-self.raiseVal)/13.26))
         for buttonArr in self.buttonPushMap:
             for button in buttonArr:
                 button.clear()
@@ -287,7 +290,7 @@ class RangeBuilder():
             return
         success = self.dictToRangeDrawing(dictionary)
         if success == False:
-            QMessageBox.about(self.main, "Error", "File Format Invalid. Please Clear")
+            QMessageBox.about(self.main, "Error", "File Format Invalid. Clearing")
 
     def rangeDrawingToDict(self):
         dictionary = {}
