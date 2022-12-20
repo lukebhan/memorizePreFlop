@@ -1,2 +1,0 @@
-W1.0: AA, AKs, W0.5: AKo, KK, QQ, AJs, KJs, A5s; W1.0: AQs, KQs, QJs, JJ, ATs, KTs, TT, W0.5: AKo, KK, QQ, AJs, KJs, QTs, JTs, T9s, 99, 88, 77, 66
-Depends: AA AKo AQo AJo ATo AKs KK KQo KJo AQs KQs QQ AJs KJs QJs JJ ATs KTs QTs JTs TT A9s K9s Q9s T9s 99 A8s K8s 88 A7s 77 A6s A5s A4s A3s A2s QJo J9s 66 

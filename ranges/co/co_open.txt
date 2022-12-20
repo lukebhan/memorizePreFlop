@@ -1,0 +1,1 @@
+W1.0: AA, AKo, AQo, AJo, ATo, A9o, A8o, A5o, AKs, KK, KQo, KJo, KTo, AQs, KQs, QQ, QJo, QTo, AJs, KJs, QJs, JJ, JTo, ATs, KTs, QTs, JTs, TT, A9s, K9s, Q9s, J9s, T9s, 99, A8s, K8s, Q8s, J8s, T8s, 98s, 88, A7s, K7s, Q7s, J7s, 97s, 87s, 77, A6s, K6s, Q6s, J6s, 66, A5s, K5s, Q5s, 55, A4s, K4s, 44, A3s, K3s, A2s; 

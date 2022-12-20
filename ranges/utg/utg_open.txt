@@ -1,1 +1,1 @@
-W1.0: AA, AKo, AQo, AJo, ATo, AKs, KK, KQo, KJo, AQs, KQs, QQ, AJs, KJs, QJs, JJ, ATs, KTs, QTs, JTs, TT, A9s, K9s, Q9s, T9s, 99, A8s, K8s, 88, A7s, 77, A6s, A5s, A4s, A3s, A2s, W0.5: QJo, J9s, 66; 
+W1.0: AA, AKo, AQo, AJo, ATo, AKs, KK, KQo, KJo, AQs, KQs, QQ, AJs, KJs, QJs, JJ, ATs, KTs, QTs, JTs, TT, A9s, K9s, Q9s, J9s, T9s, 99, A8s, K8s, 88, A7s, K7s, 77, A6s, 66, A5s, 55, A4s, A3s, A2s; 
