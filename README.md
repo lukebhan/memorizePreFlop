@@ -17,7 +17,7 @@ Please checkout this youtube <a href="https://www.youtube.com/watch?v=jHXeO7m5Cg
 # Installation
 ## Windows
 
-<a id="raw-url" href="https://raw.githubusercontent.com/lukebhan/memorizePreFlop/master/MemorizePreflopWindows.zip">Windows</a>
+<a id="raw-url" href="https://raw.githubusercontent.com/lukebhan/memorizePreFlop/master/builds/MemorizePreflopWindows.zip">Windows</a>
 
 Windows installation is the easiest. Just click the link above and extract the folder. Then to run the application, just click on the file titled Memorize Preflop. 
 
