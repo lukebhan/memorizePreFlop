@@ -44,7 +44,7 @@ class TrainingReports():
 
     def buildRightLayout(self):
         rightLayout = QVBoxLayout()
-        rightLayout.setContentsMargins(0,200, 0, 70)
+        #rightLayout.setContentsMargins(0,200, 0, 70)
         rightLayout.addLayout(self.buildRefreshButton())
         rightLayout.addLayout(self.buildNameEdit())
         rightLayout.addLayout(self.buildNewButtons())
@@ -153,7 +153,7 @@ class TrainingReports():
             buttonArr = []
             for j in range(13):
                 button = DrawReportButton("#36454F", self.comboMap[i][j])
-                button.setFont(self.font(22))
+                button.setFont(self.font(15))
                 buttonSubLayout.addWidget(button)
                 buttonArr.append(button)
             buttonMainLayout.addLayout(buttonSubLayout)
@@ -162,7 +162,7 @@ class TrainingReports():
 
     def createRangeBrowser(self):
         reportEditLayout = QHBoxLayout()
-        reportEditLayout.setContentsMargins(0, 20, 20, 0)
+        #reportEditLayout.setContentsMargins(0, 20, 20, 0)
 
         self.reportLineEdit = QLineEdit()
         self.reportLineEdit.setFont(self.font(12))
@@ -184,7 +184,7 @@ class TrainingReports():
     def buildStatisticsTable(self):
         self.table = QTableWidget(0, 12)
         self.tableLayout = QHBoxLayout()
-        self.tableLayout.setContentsMargins(0, 20, 0, 20)
+        #self.tableLayout.setContentsMargins(0, 20, 0, 20)
         self.tableLayout.addWidget(self.table)
         self.table.setHorizontalHeaderItem(0, QTableWidgetItem("          Spot         "))
         self.table.setHorizontalHeaderItem(1, QTableWidgetItem("Number of\n   Hands   "))
@@ -201,7 +201,7 @@ class TrainingReports():
         self.table.setHorizontalHeaderItem(12, QTableWidgetItem("Percent\n Fold Correct "))
         self.table.horizontalHeader().setFont(self.font(12))
         self.table.setFont(self.font(12))
-        self.table.resizeColumnsToContents()
+        #self.table.resizeColumnsToContents()
         self.table.verticalHeader().hide();
         self.table.doubleClicked.connect(self.drawSpot)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers);

@@ -48,7 +48,7 @@ class RangeBuilder():
 
     def buildRightLayout(self):
         rightLayout = QVBoxLayout()
-        rightLayout.setContentsMargins(0,100, 0, 70)
+        #rightLayout.setContentsMargins(0,100, 0, 70)
 
         raiseButton, callButton = self.createRaiseCallButtons()
         raiseSlider, callSlider = self.createRaiseCallSliders()

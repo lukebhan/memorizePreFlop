@@ -49,7 +49,7 @@ class HandTrainer():
 
     def buildRightLayout(self):
         rightLayout = QVBoxLayout()
-        rightLayout.setContentsMargins(0, 100, 70, 70)
+        #rightLayout.setContentsMargins(0, 100, 70, 70)
         rightLayout.addWidget(self.trainingActive())
         rightLayout.addLayout(self.createResetAndStartButtons())
         rightLayout.addLayout(self.createAddDeleteClearButtons())
