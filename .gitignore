@@ -9,9 +9,10 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 
-# PyInstaller intermediates (the finished zips in builds/ are committed)
+# PyInstaller build output (binaries are published to GitHub Releases by CI)
 build/
 dist/
+builds/
 *.spec
 
 # OS / editor
