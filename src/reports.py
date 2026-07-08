@@ -45,6 +45,8 @@ class Report():
         spot["handCallArrCorrect"] = np.zeros((13, 13), dtype=np.int32)
         spot["handFoldArrAttempt"] = np.zeros((13, 13), dtype=np.int32)
         spot["handFoldArrCorrect"] = np.zeros((13, 13), dtype=np.int32)
+        spot["handAllinArrAttempt"] = np.zeros((13, 13), dtype=np.int32)
+        spot["handAllinArrCorrect"] = np.zeros((13, 13), dtype=np.int32)
         spot["chartTrainerArrAttempt"] = np.zeros((13, 13), dtype=np.int32)
         spot["chartTrainerArrCorrect"] = np.zeros((13, 13), dtype=np.int32)
         spot["statistics"] = {}
@@ -56,6 +58,8 @@ class Report():
         spot["statistics"]["callNumberOfHandsCorrect"] = 0
         spot["statistics"]["foldNumberOfHands"] = 0
         spot["statistics"]["foldNumberOfHandsCorrect"] = 0
+        spot["statistics"]["allinNumberOfHands"] = 0
+        spot["statistics"]["allinNumberOfHandsCorrect"] = 0
         self.report["data"][spotName] = spot
 
     def clearReport(self):
@@ -84,7 +88,13 @@ class Report():
                     self.writeArr(f, spot["handCallArrCorrect"])
                     self.writeArr(f, spot["handFoldArrAttempt"])
                     self.writeArr(f, spot["handFoldArrCorrect"])
-            return True 
+                    # All-In data is appended after the fold data so that older
+                    # reports (which stop here) remain loadable.
+                    f.write(str(spot["statistics"]["allinNumberOfHands"]) +"\n")
+                    f.write(str(spot["statistics"]["allinNumberOfHandsCorrect"]) +"\n")
+                    self.writeArr(f, spot["handAllinArrAttempt"])
+                    self.writeArr(f, spot["handAllinArrCorrect"])
+            return True
         except:
             return False
 
@@ -95,79 +105,85 @@ class Report():
         f.write(str(arr[-1]) + "\n")
 
     def readArr(self, line):
-        arr = np.zeros((169))
+        arr = np.zeros((169), dtype=np.int32)
         line = line.split(",")
+        # int(float(...)) so values written as "17" or "17.0" both load
         for idx in range(168):
-            arr[idx] = int(line[idx])
-        arr[-1] = int(line[-1].rstrip())
+            arr[idx] = int(float(line[idx]))
+        arr[-1] = int(float(line[-1].rstrip()))
         arr = arr.reshape((13, 13))
         return arr
+
+    def isInt(self, s):
+        try:
+            int(s)
+            return True
+        except:
+            return False
 
     def loadReport(self, filename):
         self.clearReport()
         try:
             with open(filename, "r") as f:
-                line = f.readline()
-                self.report["name"] = line.rstrip()
-                self.report["data"] = {}
-                while line:
-                    # line contains the next line after the spot once self.loadSpot is called
-                    success, line, spotName, spot = self.loadSpot(f)
-                    if success:
-                        self.report["data"][spotName] = spot
+                lines = f.readlines()
+            self.report["name"] = lines[0].rstrip()
+            self.report["data"] = {}
+            i = 1
+            while i < len(lines):
+                if lines[i].strip() == "":
+                    i += 1
+                    continue
+                try:
+                    i, spotName, spot = self.loadSpot(lines, i)
+                except:
+                    # Stop on a malformed/truncated spot, keeping earlier ones
+                    break
+                self.report["data"][spotName] = spot
             return True
         except:
             return False
 
-    def loadSpot(self, f):
-        line = f.readline()
-        if not line:
-            return False, None, None, None
+    def loadSpot(self, lines, i):
+        spotName = lines[i].rstrip(); i += 1
+        stats = {}
+        stats["numberOfHands"] = int(lines[i].rstrip()); i += 1
+        stats["numberOfHandsCorrect"] = int(lines[i].rstrip()); i += 1
+        stats["raiseNumberOfHands"] = int(lines[i].rstrip()); i += 1
+        stats["raiseNumberOfHandsCorrect"] = int(lines[i].rstrip()); i += 1
+        stats["callNumberOfHands"] = int(lines[i].rstrip()); i += 1
+        stats["callNumberOfHandsCorrect"] = int(lines[i].rstrip()); i += 1
+        stats["foldNumberOfHands"] = int(lines[i].rstrip()); i += 1
+        stats["foldNumberOfHandsCorrect"] = int(lines[i].rstrip()); i += 1
+        spot = {}
+        spot["statistics"] = stats
+        spot["handTotalArrAttempt"] = self.readArr(lines[i]); i += 1
+        spot["handTotalArrCorrect"] = self.readArr(lines[i]); i += 1
+        spot["handRaiseArrAttempt"] = self.readArr(lines[i]); i += 1
+        spot["handRaiseArrCorrect"] = self.readArr(lines[i]); i += 1
+        spot["handCallArrAttempt"] = self.readArr(lines[i]); i += 1
+        spot["handCallArrCorrect"] = self.readArr(lines[i]); i += 1
+        spot["handFoldArrAttempt"] = self.readArr(lines[i]); i += 1
+        spot["handFoldArrCorrect"] = self.readArr(lines[i]); i += 1
+        # All-In block is optional. In new reports the line after the fold data
+        # is an integer (allinNumberOfHands); in older reports it is the next
+        # spot name (never a bare integer), so we can detect it safely.
+        if i < len(lines) and self.isInt(lines[i].rstrip()):
+            stats["allinNumberOfHands"] = int(lines[i].rstrip()); i += 1
+            stats["allinNumberOfHandsCorrect"] = int(lines[i].rstrip()); i += 1
+            spot["handAllinArrAttempt"] = self.readArr(lines[i]); i += 1
+            spot["handAllinArrCorrect"] = self.readArr(lines[i]); i += 1
         else:
-            try:
-                spotName = line.rstrip()
-                spot = {}
-                spot["statistics"] = {}
-                line = f.readline()
-                spot["statistics"]["numberOfHands"] = int(int(line.rstrip()))
-                line = f.readline()
-                spot["statistics"]["numberOfHandsCorrect"] = int(int(line.rstrip()))
-                line = f.readline()
-                spot["statistics"]["raiseNumberOfHands"] = int(int(line.rstrip()))
-                line = f.readline()
-                spot["statistics"]["raiseNumberOfHandsCorrect"] = int(line.rstrip())
-                line = f.readline()
-                spot["statistics"]["callNumberOfHands"] = int(line.rstrip())
-                line = f.readline()
-                spot["statistics"]["callNumberOfHandsCorrect"] = int(line.rstrip())
-                line = f.readline()
-                spot["statistics"]["foldNumberOfHands"] = int(line.rstrip())
-                line = f.readline()
-                spot["statistics"]["foldNumberOfHandsCorrect"] = int(line.rstrip())
-                line = f.readline()
-                spot["handTotalArrAttempt"] = self.readArr(line)
-                line = f.readline()
-                spot["handTotalArrCorrect"] = self.readArr(line)
-                line = f.readline()
-                spot["handRaiseArrAttempt"] = self.readArr(line)
-                line = f.readline()
-                spot["handRaiseArrCorrect"] = self.readArr(line)
-                line = f.readline()
-                spot["handCallArrAttempt"] = self.readArr(line)
-                line = f.readline()
-                spot["handCallArrCorrect"] = self.readArr(line)
-                line = f.readline()
-                spot["handFoldArrAttempt"] = self.readArr(line)
-                line = f.readline()
-                spot["handFoldArrCorrect"] = self.readArr(line)
-                return True, line, spotName, spot
-            except:
-                return False, None, None, None
+            stats["allinNumberOfHands"] = 0
+            stats["allinNumberOfHandsCorrect"] = 0
+            spot["handAllinArrAttempt"] = np.zeros((13, 13), dtype=np.int32)
+            spot["handAllinArrCorrect"] = np.zeros((13, 13), dtype=np.int32)
+        return i, spotName, spot
 
-    # Mode is an int b/t 1 and 3
+    # Mode is an int b/t 1 and 4
     # 1 = raise
     # 2 = call
     # 3 = fold
+    # 4 = raise all-in
     def addHandData(self, spot, hand, correct,  mode, addTotals):
         if addTotals == True:
             self.addHandData("Total", hand, correct, mode, False)
@@ -200,6 +216,14 @@ class Report():
                 self.report["data"][spot]["statistics"]["foldNumberOfHandsCorrect"] += 1
                 self.report["data"][spot]["handTotalArrCorrect"][handIdx[0]][handIdx[1]] += 1
                 self.report["data"][spot]["handFoldArrCorrect"][handIdx[0]][handIdx[1]] += 1
+        if mode ==4:
+            self.report["data"][spot]["statistics"]["allinNumberOfHands"] += 1
+            self.report["data"][spot]["handAllinArrAttempt"][handIdx[0]][handIdx[1]] += 1
+            if correct:
+                self.report["data"][spot]["statistics"]["numberOfHandsCorrect"] += 1
+                self.report["data"][spot]["statistics"]["allinNumberOfHandsCorrect"] += 1
+                self.report["data"][spot]["handTotalArrCorrect"][handIdx[0]][handIdx[1]] += 1
+                self.report["data"][spot]["handAllinArrCorrect"][handIdx[0]][handIdx[1]] += 1
 
     def isEmpty(self):
         return not bool(self.report)

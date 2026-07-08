@@ -37,7 +37,7 @@ class HandTrainer():
 
     def buildLeftLayout(self):
         leftLayout = QHBoxLayout()
-        leftLayout.setContentsMargins(70, 20, 70, 70)
+        leftLayout.setContentsMargins(20, 20, 20, 20)
         leftLayout.setSpacing(0)
        
         self.leftTrainerLayout = QVBoxLayout()
@@ -267,80 +267,57 @@ class HandTrainer():
         self.sceneButtonLayout = QHBoxLayout()
         callButton = QPushButton("Call")
         raiseButton = QPushButton("Raise")
+        allinButton = QPushButton("Raise All-In")
         foldButton = QPushButton("Fold")
 
         callButton.clicked.connect(self.scenarioCallButtonCallback)
         raiseButton.clicked.connect(self.scenarioRaiseButtonCallback)
+        allinButton.clicked.connect(self.scenarioAllinButtonCallback)
         foldButton.clicked.connect(self.scenarioFoldButtonCallback)
         self.sceneButtonLayout.addWidget(raiseButton)
         self.sceneButtonLayout.addWidget(callButton)
+        self.sceneButtonLayout.addWidget(allinButton)
         self.sceneButtonLayout.addWidget(foldButton)
 
+    def recordAnswer(self, correct, mode, raiseWeight, callWeight, allinWeight, foldWeight):
+        if self.report.isActive():
+            self.report.addHandData(self.res, self.hand, correct, mode, True)
+        if self.scoreLabel.text() == "":
+            self.scoreLabel.setText("Score: " + ("1/1" if correct else "0/1"))
+        else:
+            num, dom = self.parseScore()
+            num = int(num) + (1 if correct else 0)
+            self.scoreLabel.setText("Score: " + str(num) + "/" + str(int(dom)+1))
+        if correct:
+            self.generateTrainingScenario()
+        else:
+            self.clearLayout(self.sceneButtonLayout)
+            self.buildDisplayWeights(raiseWeight, callWeight, allinWeight, foldWeight)
+
+    # The randomizer [0, 1) maps to segments: fold, call, raise, all-in (in order)
     def scenarioRaiseButtonCallback(self):
-        raiseWeight, callWeight, foldWeight = self.getWeights()
-        if float(self.randomInt) / 100.0 >= callWeight+foldWeight:
-            if self.report.isActive():
-                self.report.addHandData(self.res, self.hand, True, 1, True)
-            if self.scoreLabel.text() == "":
-                self.scoreLabel.setText("Score: 1/1")
-            else:
-                num, dom = self.parseScore()
-                self.scoreLabel.setText("Score: " + str(int(num)+1) + "/" + str(int(dom)+1))
-            self.generateTrainingScenario()
-        else:
-            if self.report.isActive():
-                self.report.addHandData(self.res, self.hand, False, 1, True)
-            if self.scoreLabel.text() == "":
-                self.scoreLabel.setText("Score: 0/1")
-            else:
-                num, dom = self.parseScore()
-                self.scoreLabel.setText("Score: " + str(int(num)) + "/" + str(int(dom)+1))
-            self.clearLayout(self.sceneButtonLayout)
-            self.buildDisplayWeights(raiseWeight, callWeight, foldWeight)
-            
+        raiseWeight, callWeight, allinWeight, foldWeight = self.getWeights()
+        x = float(self.randomInt) / 100.0
+        correct = x >= (callWeight+foldWeight) and x < (callWeight+foldWeight+raiseWeight)
+        self.recordAnswer(correct, 1, raiseWeight, callWeight, allinWeight, foldWeight)
+
     def scenarioCallButtonCallback(self):
-        raiseWeight, callWeight, foldWeight = self.getWeights()
-        if float(self.randomInt) / 100.0 >= foldWeight and self.randomInt/100 < (callWeight+foldWeight):
-            if self.report.isActive():
-                self.report.addHandData(self.res, self.hand, True, 2, True)
-            if self.scoreLabel.text() == "":
-                self.scoreLabel.setText("Score: 1/1")
-            else:
-                num, dom = self.parseScore()
-                self.scoreLabel.setText("Score: " + str(int(num)+1) + "/" + str(int(dom)+1))
-            self.generateTrainingScenario()
-        else:
-            if self.report.isActive():
-                self.report.addHandData(self.res, self.hand, False, 2, True)
-            if self.scoreLabel.text() == "":
-                self.scoreLabel.setText("Score: 0/1")
-            else:
-                num, dom = self.parseScore()
-                self.scoreLabel.setText("Score: " + str(int(num)) + "/" + str(int(dom)+1))
-            self.clearLayout(self.sceneButtonLayout)
-            self.buildDisplayWeights(raiseWeight, callWeight, foldWeight)
+        raiseWeight, callWeight, allinWeight, foldWeight = self.getWeights()
+        x = float(self.randomInt) / 100.0
+        correct = x >= foldWeight and x < (callWeight+foldWeight)
+        self.recordAnswer(correct, 2, raiseWeight, callWeight, allinWeight, foldWeight)
+
+    def scenarioAllinButtonCallback(self):
+        raiseWeight, callWeight, allinWeight, foldWeight = self.getWeights()
+        x = float(self.randomInt) / 100.0
+        correct = x >= (callWeight+foldWeight+raiseWeight)
+        self.recordAnswer(correct, 4, raiseWeight, callWeight, allinWeight, foldWeight)
 
     def scenarioFoldButtonCallback(self):
-        raiseWeight, callWeight, foldWeight = self.getWeights()
-        if float(self.randomInt) / 100.0 < foldWeight:
-            if self.report.isActive():
-                self.report.addHandData(self.res, self.hand, True, 3, True)
-            if self.scoreLabel.text() == "":
-                self.scoreLabel.setText("Score: 1/1")
-            else:
-                num, dom = self.parseScore()
-                self.scoreLabel.setText("Score: " + str(int(num)+1) + "/" + str(int(dom)+1))
-            self.generateTrainingScenario()
-        else:
-            if self.report.isActive():
-                self.report.addHandData(self.res, self.hand, False, 3, True)
-            if self.scoreLabel.text() == "":
-                self.scoreLabel.setText("Score: 0/1")
-            else:
-                num, dom = self.parseScore()
-                self.scoreLabel.setText("Score: " + str(int(num)) + "/" + str(int(dom)+1))
-            self.clearLayout(self.sceneButtonLayout)
-            self.buildDisplayWeights(raiseWeight, callWeight, foldWeight)
+        raiseWeight, callWeight, allinWeight, foldWeight = self.getWeights()
+        x = float(self.randomInt) / 100.0
+        correct = x < foldWeight
+        self.recordAnswer(correct, 3, raiseWeight, callWeight, allinWeight, foldWeight)
 
     def parseScore(self):
         score = self.scoreLabel.text()
@@ -354,7 +331,7 @@ class HandTrainer():
             self.scoreLabel.setFont(self.font(17))
         return s1, s2
 
-    def buildDisplayWeights(self, raiseWeight, callWeight, foldWeight):
+    def buildDisplayWeights(self, raiseWeight, callWeight, allinWeight, foldWeight):
         layout = QHBoxLayout()
         layoutLabel = QHBoxLayout()
         layoutLabel.setSpacing(2)
@@ -371,6 +348,10 @@ class HandTrainer():
         callLabel.setStyleSheet("color: blue")
         callLabel.setFont(self.font(15))
 
+        allinLabel = QLabel("All-In Weight: " + str(allinWeight) + "  ")
+        allinLabel.setStyleSheet("color: purple")
+        allinLabel.setFont(self.font(15))
+
         foldLabel = QLabel("Fold Weight: " + str(foldWeight) + "  ")
         foldLabel.setStyleSheet("color: red")
         foldLabel.setFont(self.font(15))
@@ -378,6 +359,7 @@ class HandTrainer():
         layoutLabel.addWidget(incLabel)
         layoutLabel.addWidget(raiseLabel)
         layoutLabel.addWidget(callLabel)
+        layoutLabel.addWidget(allinLabel)
         layoutLabel.addWidget(foldLabel)
 
         continueButton = QPushButton("Continue")
@@ -390,6 +372,7 @@ class HandTrainer():
         weightDict = self.sceneDict[self.problemLabel]
         raiseWeight = 0
         callWeight = 0
+        allinWeight = 0
         for val in weightDict["raise"]:
             if self.hand in val[0]:
                 raiseWeight += float(val[1])
@@ -397,7 +380,11 @@ class HandTrainer():
             for val in weightDict["call"]:
                 if self.hand in val[0]:
                     callWeight += float(val[1])
-        return raiseWeight, callWeight, 1-raiseWeight-callWeight
+        if weightDict.get("allin") is not None:
+            for val in weightDict["allin"]:
+                if self.hand in val[0]:
+                    allinWeight += float(val[1])
+        return raiseWeight, callWeight, allinWeight, 1-raiseWeight-callWeight-allinWeight
 
     def clearLayout(self, layout):
         while layout.count():

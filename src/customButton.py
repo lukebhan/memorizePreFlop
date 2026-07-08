@@ -4,6 +4,13 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 
 
+def scaledFont(widget, rect, ratio=0.42, minSize=4):
+    # A font sized to the current cell so grid text scales with the window
+    f = widget.font()
+    f.setPixelSize(max(minSize, int(min(rect.width(), rect.height()) * ratio)))
+    return f
+
+
 class DrawRangeButton(QPushButton):
     drag = QtCore.pyqtSignal(QtCore.QPoint)
     def __init__(self, mainColor, text):
@@ -11,11 +18,17 @@ class DrawRangeButton(QPushButton):
         self.mainColor = mainColor
         self.raiseColor = None
         self.callColor = None
+        self.allinColor = None
         self.curHeight = 0
         self.raiseScale = 0
         self.callScale = 0
+        self.allinScale = 0
         self.text = text
         self.incorrect = False
+        # Let the button shrink/grow with the window instead of forcing a large
+        # minimum size from its font; the text is scaled to fit in paintEvent.
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setMinimumSize(1, 1)
 
     def paintEvent(self, event):
         r = event.rect()
@@ -23,40 +36,46 @@ class DrawRangeButton(QPushButton):
         p.fillRect(0, 0, int(r.width()), int(r.height()), Qt.black)
         p.fillRect(2, 2, int(r.width())-2, int(r.height())-2, QColor(self.mainColor))
 
-                # we going to draw on top for filling
-        if self.raiseScale != 0 and self.callScale != 0:
-            # Draw both
-            p.fillRect(2, 2, int((int(r.width())-2)*self.raiseScale), int(r.height())-2, QColor(self.raiseColor))
-            p.fillRect(2+int(int(r.width()-2)*self.raiseScale), 2, int((int(r.width())-2)*self.callScale), int(r.height())-2, QColor(self.callColor))
-        elif self.raiseScale != 0:
-            # Draw raise scale  
-            p.fillRect(2, 2, int((int(r.width())-2)*self.raiseScale), int(r.height())-2, QColor(self.raiseColor))
-        elif self.callScale != 0:
-            # Draw call scale
-            p.fillRect(2, 2, int((int(r.width())-2)*self.callScale), int(r.height())-2, QColor(self.callColor))
+        # Draw each category segment side by side, offset by the previous ones
+        width = int(r.width())-2
+        height = int(r.height())-2
+        offset = 2
+        for scale, color in ((self.raiseScale, self.raiseColor),
+                             (self.callScale, self.callColor),
+                             (self.allinScale, self.allinColor)):
+            if scale != 0:
+                p.fillRect(offset, 2, int(width*scale), height, QColor(color))
+                offset += int(width*scale)
+        p.setFont(scaledFont(self, r))
         p.drawText(r, Qt.AlignCenter, self.text)
         if self.incorrect:
             p.fillRect(int(r.width()*0.75), int(r.height()*0.25), int(r.width()*0.18), int(r.height()*0.18), QColor("red"))
 
     def changeColorAndScale(self, color, scale, raiseOrCall):
-        # Update raise
+        # raiseOrCall: 1 = raise, 0 = call, 2 = all-in
         if raiseOrCall == 1:
-            if self.raiseScale == scale:
-                self.raiseScale = 0
-            else:
-                if scale + self.callScale > 1:
-                    QMessageBox.about(self, "Warning", "Call + Raise Percentage > 1. Percentage not updated")
-                else:
-                    self.raiseScale = scale
-            self.raiseColor = color
+            cur, others = self.raiseScale, self.callScale + self.allinScale
+        elif raiseOrCall == 2:
+            cur, others = self.allinScale, self.raiseScale + self.callScale
         else:
-            if self.callScale == scale:
-                self.callScale = 0
-            else:
-                if scale + self.raiseScale > 1:
-                    QMessageBox.about(self, "Warning", "Call + Raise Percentage > 1. Percentage not updated")
-                else:
-                    self.callScale = scale
+            cur, others = self.callScale, self.raiseScale + self.allinScale
+
+        if cur == scale:
+            newScale = 0
+        elif scale + others > 1:
+            QMessageBox.about(self, "Warning", "Raise + Call + All-In Percentage > 1. Percentage not updated")
+            newScale = cur
+        else:
+            newScale = scale
+
+        if raiseOrCall == 1:
+            self.raiseScale = newScale
+            self.raiseColor = color
+        elif raiseOrCall == 2:
+            self.allinScale = newScale
+            self.allinColor = color
+        else:
+            self.callScale = newScale
             self.callColor = color
         self.update()
 
@@ -64,6 +83,9 @@ class DrawRangeButton(QPushButton):
         if raiseOrCall == 1:
             self.raiseScale = scale
             self.raiseColor = color
+        elif raiseOrCall == 2:
+            self.allinScale = scale
+            self.allinColor = color
         else:
             self.callScale = scale
             self.callColor = color
@@ -72,6 +94,8 @@ class DrawRangeButton(QPushButton):
     def changeColor(self, color, raiseOrCall):
         if raiseOrCall == 1:
             self.raiseColor = color
+        elif raiseOrCall == 2:
+            self.allinColor = color
         else:
             self.callColor = color
         self.update()
@@ -79,6 +103,7 @@ class DrawRangeButton(QPushButton):
     def clear(self):
         self.raiseScale = 0
         self.callScale = 0
+        self.allinScale = 0
         self.update()
 
     def getCallScale(self):
@@ -86,6 +111,9 @@ class DrawRangeButton(QPushButton):
 
     def getRaiseScale(self):
         return self.raiseScale
+
+    def getAllinScale(self):
+        return self.allinScale
 
     def markIncorrect(self):
         self.incorrect=True
@@ -123,12 +151,15 @@ class DrawReportButton(QPushButton):
         self.text = text
         self.mainColor = mainColor
         self.curColor = mainColor
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setMinimumSize(1, 1)
 
     def paintEvent(self, event):
         r = event.rect()
         p = QPainter(self)
         p.fillRect(0, 0, int(r.width()), int(r.height()), Qt.black)
         p.fillRect(2, 2, int(r.width())-2, int(r.height())-2, QColor(self.curColor))
+        p.setFont(scaledFont(self, r))
         p.drawText(r, Qt.AlignCenter, self.text)
 
     def updateButton(self, total, correct):

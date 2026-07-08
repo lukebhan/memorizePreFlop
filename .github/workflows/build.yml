@@ -1,0 +1,55 @@
+name: Build binaries
+
+# Builds the Windows, macOS and Linux bundles natively (PyInstaller cannot
+# cross-compile, so each OS is built on its own runner). Run it from the
+# Actions tab (workflow_dispatch) or by pushing a tag like v1.2.0.
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            asset: MemorizePreflopWindows
+          - os: macos-latest
+            asset: MemorizePreflopMacOS
+          - os: ubuntu-latest
+            asset: MemorizePreflopLinux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install PyQt5 numpy pyinstaller
+
+      - name: Build bundle
+        run: python build.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: builds/${{ matrix.asset }}.zip
+
+  release:
+    # On a version tag, attach all three zips to a GitHub Release.
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/**/*.zip

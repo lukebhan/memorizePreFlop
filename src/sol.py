@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt
 import PyQt5.QtCore as QtCore
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-from customButton import DrawScenarioButton
+from customButton import DrawScenarioButton, DrawRangeButton, DrawReportButton
 from trainingReports import TrainingReports
 from rangeBuilder import RangeBuilder
 from handTrainer import HandTrainer
@@ -20,14 +20,23 @@ class simul(QMainWindow):
         # Fonts
 
         self.setWindowTitle("Memorize PreFlop")
+        # Zoom level applied on top of FONT_SCALE via Ctrl + mouse wheel.
+        self.zoom = 1.0
         self.mainWidget = QWidget()
-        self.setCentralWidget(self.mainWidget)
+        # Scroll area so zoomed-in content can overflow with scrollbars instead
+        # of forcing the window larger.
+        self.scrollArea = QScrollArea()
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.setWidget(self.mainWidget)
+        self.setCentralWidget(self.scrollArea)
+        # Small minimum so the whole UI can be dragged down to fit small windows.
+        self.setMinimumSize(400, 300)
         self.layout = QGridLayout(self.mainWidget)
 
         self.titleWidget = QLabel("Memorize PreFlop")
         self.titleWidget.setFont(self.font(30))
         self.layout.addWidget(self.titleWidget, 0, 0, Qt.AlignCenter)
-        self.layout.setContentsMargins(30, 30, 30, 30)
+        self.layout.setContentsMargins(10, 10, 10, 10)
 
         self.tabWidget = QTabWidget()
 
@@ -41,6 +50,50 @@ class simul(QMainWindow):
         self.innerLayout.setContentsMargins(10, 10, 10, 10)
         self.layout.addLayout(self.innerLayout, 1, 0)
         self.innerLayout.addWidget(self.tabWidget, 1, 0)
+
+        # Catch Ctrl + wheel anywhere in the app to zoom the whole UI.
+        QApplication.instance().installEventFilter(self)
+
+    def eventFilter(self, obj, event):
+        if event.type() == QtCore.QEvent.Wheel and (event.modifiers() & Qt.ControlModifier):
+            delta = event.angleDelta().y()
+            if delta != 0:
+                self.setZoom(self.zoom * (1.1 if delta > 0 else 1/1.1))
+            return True
+        return super().eventFilter(obj, event)
+
+    def setZoom(self, newZoom):
+        newZoom = max(0.5, min(3.0, newZoom))
+        if abs(newZoom - self.zoom) < 1e-6:
+            return
+        old = self.zoom
+        widgets = self.findChildren(QWidget)
+        # Pass 1: capture each widget's base (zoom 1.0) font size BEFORE touching
+        # any font, so inherited fonts are not re-read after being enlarged.
+        for wdg in widgets:
+            if wdg.property("_baseFontPS") is None:
+                ps = wdg.font().pointSizeF()
+                if ps > 0:
+                    wdg.setProperty("_baseFontPS", ps / old)
+        # Pass 2: set each font absolutely from its base, so zoom never compounds.
+        for wdg in widgets:
+            base = wdg.property("_baseFontPS")
+            if base is not None:
+                f = wdg.font()
+                f.setPointSizeF(max(4.0, base * newZoom))
+                wdg.setFont(f)
+        self.zoom = newZoom
+        self.applyGridZoom()
+
+    def applyGridZoom(self):
+        # Grid cells stay fully collapsible at/below 1.0 (so the window can be
+        # made small); above 1.0 they grow and the scroll area scrolls.
+        cell = int(26 * self.zoom)
+        for button in self.findChildren(DrawRangeButton) + self.findChildren(DrawReportButton):
+            if self.zoom > 1.0:
+                button.setMinimumSize(cell, cell)
+            else:
+                button.setMinimumSize(1, 1)
 
     def generateFirstReport(self):
         if not hasattr(self, 'reports'):
@@ -67,8 +120,13 @@ class simul(QMainWindow):
                     inverseMap[cards[i]+cards[j]] = [j, i]
         return np.array(combo).reshape((13, 13)).transpose(), inverseMap
 
+    # Font sizes throughout the app are requested at their original scale; we
+    # scale them down here so the fixed-size text does not force a large minimum
+    # window size. Change FONT_SCALE alone to retune the whole UI.
+    FONT_SCALE = 0.5
+
     def font(self, size):
-        return QFont("courier 10 pitch", size)
+        return QFont("courier 10 pitch", max(6, int(size * self.FONT_SCALE * self.zoom)))
 
     def rangeBuilderFunc(self):
         comboMap, comboMapInverse = self.generateMap()
@@ -91,6 +149,11 @@ class simul(QMainWindow):
 
 
 if __name__ == "__main__":
+    # When running as a bundled (PyInstaller) app, the card images, ranges and
+    # reports are shipped next to the executable. Switch to that directory so
+    # the app's relative paths resolve no matter where it is launched from.
+    if getattr(sys, "frozen", False):
+        os.chdir(os.path.dirname(sys.executable))
     app = QApplication(sys.argv)
     window = simul()
     window.show()
