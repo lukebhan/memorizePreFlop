@@ -25,12 +25,12 @@ publish them to a Release. You can also build any of them yourself with
 
 ## Windows
 
-Download **[MemorizePreflopWindows.zip](https://github.com/lukebhan/memorizePreFlop/releases/latest/download/MemorizePreflopWindows.zip)**, extract the folder, and run the file titled `MemorizePreflop`. That's it.
+Download **MemorizePreflopWindows.zip** from the [latest Release](https://github.com/lukebhan/memorizePreFlop/releases/latest), extract the folder, and run the file titled `MemorizePreflop`. That's it.
 
 ## MacOS
 
 ### (a) Download the binary (recommended)
-Download **[MemorizePreflopMacOS.zip](https://github.com/lukebhan/memorizePreFlop/releases/latest/download/MemorizePreflopMacOS.zip)**, extract it, open the `MemorizePreflop` folder, and run `MemorizePreflop`. The build is unsigned, so on first launch right-click the executable and choose **Open** to get past Gatekeeper. (This binary targets Apple Silicon; on an Intel Mac, build from source below.)
+Download **MemorizePreflopMacOS.zip** from the [latest Release](https://github.com/lukebhan/memorizePreFlop/releases/latest), extract it, open the `MemorizePreflop` folder, and run `MemorizePreflop`. The build is unsigned, so on first launch right-click the executable and choose **Open** to get past Gatekeeper. (This binary targets Apple Silicon; on an Intel Mac, build from source below.)
 
 ### (b) Build from source
 Building from source only needs Python, Numpy and PyQT5:
@@ -47,7 +47,7 @@ Building from source only needs Python, Numpy and PyQT5:
 ## Linux
 
 ### (a) Download the binary (recommended)
-Download **[MemorizePreflopLinux.zip](https://github.com/lukebhan/memorizePreFlop/releases/latest/download/MemorizePreflopLinux.zip)**, extract it, open the `MemorizePreflop` folder, and run `MemorizePreflop`.
+Download **MemorizePreflopLinux.zip** from the [latest Release](https://github.com/lukebhan/memorizePreFlop/releases/latest), extract it, open the `MemorizePreflop` folder, and run `MemorizePreflop`.
 
 ### (b) Build from source
 Identical to the macOS source steps above (Python, Numpy and PyQT5):
