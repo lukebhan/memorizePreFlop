@@ -21,11 +21,20 @@ class RangeBuilder():
         self.font = font
         self.callColor = "#90EE90"
         self.raiseColor = "#FFCCCB"
+        self.allinColor = "#DDA0DD"
         self.main = mainWindow
         self.callVal = 0
         self.raiseVal = 0
+        self.allinVal = 0
         self.xIdx = -1
         self.yIdx = -1
+
+    def percentText(self):
+        return ("Total: " + "{:.2f}".format((self.callVal + self.raiseVal + self.allinVal)/13.26) +
+                " Raise: " + "{:.2f}".format(self.raiseVal/13.26) +
+                " Call: " + "{:.2f}".format(self.callVal/13.26) +
+                " All-In: " + "{:.2f}".format(self.allinVal/13.26) +
+                " Fold: " + "{:.2f}".format((1326-self.callVal-self.raiseVal-self.allinVal)/13.26))
 
     def buildMain(self):
         self.leftLayout = self.buildLeftLayout()
@@ -40,22 +49,24 @@ class RangeBuilder():
 
     def buildLeftLayout(self):
         leftLayout = QVBoxLayout()
-        leftLayout.setContentsMargins(70, 70, 70, 0)
-        leftLayout.addWidget(self.buildButtonLayout())
+        leftLayout.setContentsMargins(20, 20, 20, 0)
+        # Grid takes the stretch so it grows/shrinks with the window
+        leftLayout.addWidget(self.buildButtonLayout(), 1)
         leftLayout.addLayout(self.buildPercentageLabelLayout())
-        leftLayout.addStretch()
         return leftLayout
 
     def buildRightLayout(self):
         rightLayout = QVBoxLayout()
         #rightLayout.setContentsMargins(0,100, 0, 70)
 
-        raiseButton, callButton = self.createRaiseCallButtons()
-        raiseSlider, callSlider = self.createRaiseCallSliders()
+        raiseButton, callButton, allinButton = self.createRaiseCallButtons()
+        raiseSlider, callSlider, allinSlider = self.createRaiseCallSliders()
         rightLayout.addLayout(raiseButton)
         rightLayout.addLayout(raiseSlider)
         rightLayout.addLayout(callButton)
         rightLayout.addLayout(callSlider)
+        rightLayout.addLayout(allinButton)
+        rightLayout.addLayout(allinSlider)
         rightLayout.addLayout(self.createClearLoadSaveButtons())
         rightLayout.addLayout(self.createRangeBrowser())
         rightLayout.addLayout(self.createDependencyLabel())
@@ -65,7 +76,9 @@ class RangeBuilder():
 
     def buildPercentageLabelLayout(self):
         self.percentLabel = QLabel(alignment=Qt.AlignLeft)
-        self.percentLabel.setText("Total: 0.00 Raise: 0.00 Call: 0.00 Fold: 100.00")
+        self.percentLabel.setWordWrap(True)
+        self.percentLabel.setMinimumWidth(0)
+        self.percentLabel.setText(self.percentText())
         percentLabel = QHBoxLayout()
         percentLabel.addWidget(self.percentLabel)
         percentLabel.setContentsMargins(0, 20, 0, 0)
@@ -76,6 +89,7 @@ class RangeBuilder():
         buttonMainLayout.setSpacing(0)
 
         self.buttonWidget = DragWidget()
+        self.buttonWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.buttonWidget.setLayout(buttonMainLayout)
         self.buttonWidget.drag.connect(self.addDragButton)
 
@@ -126,13 +140,30 @@ class RangeBuilder():
         callButtonLayout.addWidget(callButton, 0)
         callButtonLayout.addWidget(self.callColorButton, 0)
         callButtonLayout.addWidget(QLabel("  "))
-        return raiseButtonLayout, callButtonLayout
+
+        allinButtonLayout = QHBoxLayout()
+        self.allinColorButton = ColorButton(color=self.allinColor, callbackFunc=self.updateAllinColor)
+        allinButton = QRadioButton(" Raise All-In ")
+        allinButton.setStyleSheet("QRadioButton::indicator"
+                                        "{"
+                                        "width : 20px;"
+                                        "height : 20px;"
+                                        "}")
+        allinButton.setFont(self.font(30))
+        allinButton.toggled.connect(self.updateAllinValue)
+        allinButtonLayout.addWidget(allinButton, 0)
+        allinButtonLayout.addWidget(self.allinColorButton, 0)
+        allinButtonLayout.addWidget(QLabel("  "))
+        return raiseButtonLayout, callButtonLayout, allinButtonLayout
 
     def updateCallValue(self):
         self.raiseCallButtonValue = 0
-    
+
     def updateRaiseValue(self):
         self.raiseCallButtonValue = 1
+
+    def updateAllinValue(self):
+        self.raiseCallButtonValue = 2
 
     def updateCallColor(self):
         self.callColor = self.callColorButton.color()
@@ -142,26 +173,34 @@ class RangeBuilder():
         self.raiseColor = self.raiseColorButton.color()
         self.redrawAllButtons(self.raiseColor, 1)
 
+    def updateAllinColor(self):
+        self.allinColor = self.allinColorButton.color()
+        self.redrawAllButtons(self.allinColor, 2)
+
     def createRaiseCallSliders(self):
         self.raiseSliderLabel = QLabel()
         self.callSliderLabel = QLabel()
+        self.allinSliderLabel = QLabel()
 
         self.raiseSliderLabel.setText("0")
         self.callSliderLabel.setText("0")
+        self.allinSliderLabel.setText("0")
 
         sliderRaise, self.raiseSlider = self.createSlider(self.raiseSliderLabel)
         sliderCall, self.callSlider = self.createSlider(self.callSliderLabel)
+        sliderAllin, self.allinSlider = self.createSlider(self.allinSliderLabel)
 
         self.raiseSlider.valueChanged.connect(self.raiseSliderLabel.setNum)
         self.callSlider.valueChanged.connect(self.callSliderLabel.setNum)
-        return sliderRaise, sliderCall
+        self.allinSlider.valueChanged.connect(self.allinSliderLabel.setNum)
+        return sliderRaise, sliderCall, sliderAllin
     
     def createSlider(self, labelVar):
         sliderHBox = QHBoxLayout()
         sliderVBox = QVBoxLayout()
 
         sliderHBox.setContentsMargins(0, 0, 0, 0)
-        sliderVBox.setContentsMargins(0, 0, 100, 0)
+        sliderVBox.setContentsMargins(0, 0, 10, 0)
 
         label_min = QLabel("0", alignment=Qt.AlignLeft)
         label_max = QLabel("100", alignment=Qt.AlignRight)
@@ -262,7 +301,8 @@ class RangeBuilder():
     def clear(self):
         self.raiseVal = 0
         self.callVal = 0
-        self.percentLabel.setText("Total: " + "{:.2f}".format((self.callVal + self.raiseVal)/13.26)+" Raise: "+ "{:.2f}".format(self.raiseVal/13.26) + " Call: " + "{:.2f}".format(self.callVal/13.26) + " Fold: " + "{:.2f}".format((1326-self.callVal-self.raiseVal)/13.26))
+        self.allinVal = 0
+        self.percentLabel.setText(self.percentText())
         for buttonArr in self.buttonPushMap:
             for button in buttonArr:
                 button.clear()
@@ -296,24 +336,31 @@ class RangeBuilder():
         dictionary = {}
         raiseArr = []
         callArr = []
+        allinArr = []
         for idx, buttonArr in enumerate(self.buttonPushMap):
             for idx2, button in enumerate(buttonArr):
                 raiseScale = button.getRaiseScale()
                 callScale = button.getCallScale()
+                allinScale = button.getAllinScale()
                 hand = self.comboMap[idx][idx2]
                 if raiseScale != 0:
                     raiseArr.append((hand, raiseScale))
                 if callScale != 0:
                     callArr.append((hand, callScale))
+                if allinScale != 0:
+                    allinArr.append((hand, allinScale))
         raiseArr = sorted(raiseArr, key=lambda x: -1*float(x[1]))
         callArr = sorted(callArr, key=lambda x: -1*float(x[1]))
+        allinArr = sorted(allinArr, key=lambda x: -1*float(x[1]))
         dictionary["raise"] = raiseArr
         dictionary["call"] = callArr
+        dictionary["allin"] = allinArr
         return dictionary
 
     def dictToRangeDrawing(self, dictionary):
         raiseArr = dictionary["raise"]
         callArr = dictionary["call"]
+        allinArr = dictionary.get("allin", [])
         for val in raiseArr:
             i, j = self.comboMapInverse[val[0]]
             self.buttonPushMap[i][j].loadColorAndScale(self.raiseColor, val[1], 1)
@@ -321,6 +368,10 @@ class RangeBuilder():
             for val in callArr:
                 i, j = self.comboMapInverse[val[0]]
                 self.buttonPushMap[i][j].loadColorAndScale(self.callColor, val[1], 0)
+        if allinArr is not None:
+            for val in allinArr:
+                i, j = self.comboMapInverse[val[0]]
+                self.buttonPushMap[i][j].loadColorAndScale(self.allinColor, val[1], 2)
         return True
 
     def parseFileToDictionary(self, filename):
@@ -345,37 +396,31 @@ class RangeBuilder():
     def fillButton(self, button):
         # button contains the index that was pressed
         # button is of the form (button, [i, j])
+        # Number of combos represented by this cell: offsuit=4, suited=12, pair=6
+        if button[1][0] > button[1][1]:
+            mult = 4
+        elif button[1][0] < button[1][1]:
+            mult = 12
+        else:
+            mult = 6
+
         if self.raiseCallButtonValue == 1:
             curValue = button[0].getRaiseScale()
-            if button[1][0] > button[1][1]:
-                self.raiseVal -= curValue*4
-                button[0].changeColorAndScale(self.raiseColor, float(self.raiseSliderLabel.text())/100.0, 1)
-                self.raiseVal += button[0].getRaiseScale()*4
-            elif button[1][0] < button[1][1]:
-                self.raiseVal -= curValue*12
-                button[0].changeColorAndScale(self.raiseColor, float(self.raiseSliderLabel.text())/100.0, 1)
-                self.raiseVal += button[0].getRaiseScale()*12
-            else:
-                self.raiseVal -= curValue*6
-                button[0].changeColorAndScale(self.raiseColor, float(self.raiseSliderLabel.text())/100.0, 1)
-                self.raiseVal += button[0].getRaiseScale()*6
-
+            self.raiseVal -= curValue*mult
+            button[0].changeColorAndScale(self.raiseColor, float(self.raiseSliderLabel.text())/100.0, 1)
+            self.raiseVal += button[0].getRaiseScale()*mult
+        elif self.raiseCallButtonValue == 2:
+            curValue = button[0].getAllinScale()
+            self.allinVal -= curValue*mult
+            button[0].changeColorAndScale(self.allinColor, float(self.allinSliderLabel.text())/100.0, 2)
+            self.allinVal += button[0].getAllinScale()*mult
         else:
             curValue = button[0].getCallScale()
-            if button[1][0] > button[1][1]:
-                self.callVal -= curValue*4
-                button[0].changeColorAndScale(self.callColor, float(self.callSliderLabel.text())/100.0, 0)
-                self.callVal += button[0].getCallScale()*4
-            elif button[1][0] < button[1][1]:
-                self.callVal -= curValue*12
-                button[0].changeColorAndScale(self.callColor, float(self.callSliderLabel.text())/100.0, 0)
-                self.callVal += button[0].getCallScale()*12
-            else:
-                self.callVal -= curValue*6
-                button[0].changeColorAndScale(self.callColor, float(self.callSliderLabel.text())/100.0, 0)
-                self.callVal += button[0].getCallScale()*6
+            self.callVal -= curValue*mult
+            button[0].changeColorAndScale(self.callColor, float(self.callSliderLabel.text())/100.0, 0)
+            self.callVal += button[0].getCallScale()*mult
 
-        self.percentLabel.setText("Total: " + "{:.2f}".format((self.callVal + self.raiseVal)/13.26)+" Raise: "+ "{:.2f}".format(self.raiseVal/13.26) + " Call: " + "{:.2f}".format(self.callVal/13.26) + " Fold: " + "{:.2f}".format((1326-self.callVal-self.raiseVal)/13.26))
+        self.percentLabel.setText(self.percentText())
 
 
     def redrawAllButtons(self, color, raiseOrCall):

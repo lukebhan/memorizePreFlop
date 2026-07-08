@@ -24,6 +24,7 @@ class ChartTrainer():
         self.font = font
         self.raiseColor = "#90EE90"
         self.callColor = "#FFCCCB"
+        self.allinColor = "#DDA0DD"
         self.main = mainWindow
         self.sceneDict = {}
         self.curSelection = None
@@ -51,34 +52,36 @@ class ChartTrainer():
         self.leftRightLayout = QVBoxLayout()
         # This must be split into two portions. 
         
-        self.leftLeftLayout.setContentsMargins(70, 0, 50, 0)
+        self.leftLeftLayout.setContentsMargins(20, 0, 15, 0)
         self.leftLeftLayout.setSpacing(0)
 
-        self.leftRightLayout.setContentsMargins(0, 100, 50, 100)
+        self.leftRightLayout.setContentsMargins(0, 20, 15, 20)
 
         self.dynamicCheckLayout = QHBoxLayout()
         #self.dynamicCheckLayout.setContentsMargins(0, 20, 20, 20)
         self.leftRightLayout.addLayout(self.dynamicCheckLayout)
 
-        leftLayout.addLayout(self.leftLeftLayout)
-        leftLayout.addLayout(self.leftRightLayout)
+        # Grid side keeps the bulk of the width as the window shrinks
+        leftLayout.addLayout(self.leftLeftLayout, 3)
+        leftLayout.addLayout(self.leftRightLayout, 2)
 
         return leftLayout
 
     def addLeftLayoutComponents(self):
         self.leftLeftLayout.addLayout(self.createProblemLabel())
-        self.leftLeftLayout.addWidget(self.buildButtonLayout())
-        self.leftLeftLayout.addStretch()
+        self.leftLeftLayout.addWidget(self.buildButtonLayout(), 1)
 
         self.dynamicCheckLayout.addLayout(self.createCheckButton())
-        raiseButton, callButton = self.createRaiseCallButtons()
-        raiseSlider, callSlider = self.createRaiseCallSliders()
+        raiseButton, callButton, allinButton = self.createRaiseCallButtons()
+        raiseSlider, callSlider, allinSlider = self.createRaiseCallSliders()
 
         self.leftRightLayout.addLayout(self.createScoreLabel())
         self.leftRightLayout.addLayout(raiseButton)
         self.leftRightLayout.addLayout(raiseSlider)
         self.leftRightLayout.addLayout(callButton)
         self.leftRightLayout.addLayout(callSlider)
+        self.leftRightLayout.addLayout(allinButton)
+        self.leftRightLayout.addLayout(allinSlider)
 
         self.leftRightLayout.addLayout(self.dynamicCheckLayout)
 
@@ -98,10 +101,11 @@ class ChartTrainer():
         buttonMainLayout.setSpacing(0)
 
         self.buttonWidget = DragWidget()
+        self.buttonWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.buttonWidget.setLayout(buttonMainLayout)
         self.buttonWidget.drag.connect(self.addDragButton)
 
-        # Build out button matrix 
+        # Build out button matrix
         self.firstButton = None
         for i in range(13):
             buttonSubLayout = QVBoxLayout()
@@ -112,7 +116,6 @@ class ChartTrainer():
                 buttonSubLayout.addWidget(button)
                 button.pressed.connect(partial(self.fillPressButton, (button, [i,j])))
                 buttonArr.append(button)
-            buttonSubLayout.addStretch()
             buttonMainLayout.addLayout(buttonSubLayout)
             self.buttonPushMap.append(buttonArr)
         return self.buttonWidget
@@ -149,13 +152,30 @@ class ChartTrainer():
         callButtonLayout.addWidget(callButton, 0)
         callButtonLayout.addWidget(self.callColorButton, 0)
         callButtonLayout.addWidget(QLabel("  "))
-        return raiseButtonLayout, callButtonLayout
+
+        allinButtonLayout = QHBoxLayout()
+        self.allinColorButton = ColorButton(color=self.allinColor, callbackFunc=self.updateAllinColor)
+        allinButton = QRadioButton(" Raise All-In ")
+        allinButton.setStyleSheet("QRadioButton::indicator"
+                                        "{"
+                                        "width : 20px;"
+                                        "height : 20px;"
+                                        "}")
+        allinButton.setFont(self.font(30))
+        allinButton.toggled.connect(self.updateAllinValue)
+        allinButtonLayout.addWidget(allinButton, 0)
+        allinButtonLayout.addWidget(self.allinColorButton, 0)
+        allinButtonLayout.addWidget(QLabel("  "))
+        return raiseButtonLayout, callButtonLayout, allinButtonLayout
 
     def updateCallValue(self):
         self.raiseCallButtonValue = 0
-    
+
     def updateRaiseValue(self):
         self.raiseCallButtonValue = 1
+
+    def updateAllinValue(self):
+        self.raiseCallButtonValue = 2
 
     def updateCallColor(self):
         self.callColor = self.callColorButton.color()
@@ -165,26 +185,34 @@ class ChartTrainer():
         self.raiseColor = self.raiseColorButton.color()
         self.redrawAllButtons(self.raiseColor, 1)
 
+    def updateAllinColor(self):
+        self.allinColor = self.allinColorButton.color()
+        self.redrawAllButtons(self.allinColor, 2)
+
     def createRaiseCallSliders(self):
         self.raiseSliderLabel = QLabel()
         self.callSliderLabel = QLabel()
+        self.allinSliderLabel = QLabel()
 
         self.raiseSliderLabel.setText("0")
         self.callSliderLabel.setText("0")
+        self.allinSliderLabel.setText("0")
 
         sliderRaise, self.raiseSlider = self.createSlider(self.raiseSliderLabel)
         sliderCall, self.callSlider = self.createSlider(self.callSliderLabel)
+        sliderAllin, self.allinSlider = self.createSlider(self.allinSliderLabel)
 
         self.raiseSlider.valueChanged.connect(self.raiseSliderLabel.setNum)
         self.callSlider.valueChanged.connect(self.callSliderLabel.setNum)
-        return sliderRaise, sliderCall
+        self.allinSlider.valueChanged.connect(self.allinSliderLabel.setNum)
+        return sliderRaise, sliderCall, sliderAllin
     
     def createSlider(self, labelVar):
         sliderHBox = QHBoxLayout()
         sliderVBox = QVBoxLayout()
 
         sliderHBox.setContentsMargins(0, 0, 0, 0)
-        sliderVBox.setContentsMargins(0, 0, 100, 0)
+        sliderVBox.setContentsMargins(0, 0, 10, 0)
 
         label_min = QLabel("0", alignment=Qt.AlignLeft)
         label_max = QLabel("100", alignment=Qt.AlignRight)
@@ -212,24 +240,31 @@ class ChartTrainer():
         dictionary = {}
         raiseArr = []
         callArr = []
+        allinArr = []
         for idx, buttonArr in enumerate(self.buttonPushMap):
             for idx2, button in enumerate(buttonArr):
                 raiseScale = button.getRaiseScale()
                 callScale = button.getCallScale()
+                allinScale = button.getAllinScale()
                 hand = self.comboMap[idx][idx2]
                 if raiseScale != 0:
                     raiseArr.append((hand, raiseScale))
                 if callScale != 0:
                     callArr.append((hand, callScale))
+                if allinScale != 0:
+                    allinArr.append((hand, allinScale))
         raiseArr = sorted(raiseArr, key=lambda x: -1*float(x[1]))
         callArr = sorted(callArr, key=lambda x: -1*float(x[1]))
+        allinArr = sorted(allinArr, key=lambda x: -1*float(x[1]))
         dictionary["raise"] = raiseArr
         dictionary["call"] = callArr
+        dictionary["allin"] = allinArr
         return dictionary
 
     def dictToRangeDrawing(self, dictionary):
         raiseArr = dictionary["raise"]
         callArr = dictionary["call"]
+        allinArr = dictionary.get("allin", [])
         for val in raiseArr:
             i, j = self.comboMapInverse[val[0]]
             self.buttonPushMap[i][j].loadColorAndScale(self.raiseColor, val[1], 1)
@@ -237,6 +272,10 @@ class ChartTrainer():
             for val in callArr:
                 i, j = self.comboMapInverse[val[0]]
                 self.buttonPushMap[i][j].loadColorAndScale(self.callColor, val[1], 0)
+        if allinArr is not None:
+            for val in allinArr:
+                i, j = self.comboMapInverse[val[0]]
+                self.buttonPushMap[i][j].loadColorAndScale(self.allinColor, val[1], 2)
         return True
 
     def parseFileToDictionary(self, filename):
@@ -263,6 +302,8 @@ class ChartTrainer():
         # button is of the form (button, [i, j])
         if self.raiseCallButtonValue == 1:
             button[0].changeColorAndScale(self.raiseColor, float(self.raiseSliderLabel.text())/100.0, 1)
+        elif self.raiseCallButtonValue == 2:
+            button[0].changeColorAndScale(self.allinColor, float(self.allinSliderLabel.text())/100.0, 2)
         else:
             button[0].changeColorAndScale(self.callColor, float(self.callSliderLabel.text())/100.0, 0)
 
@@ -314,11 +355,13 @@ class ChartTrainer():
         correctDictionary = self.sceneDict[self.problemLabel]
         correctDictionaryRaise = dict(correctDictionary["raise"])
         correctDictionaryCall = dict(correctDictionary["call"])
+        correctDictionaryAllin = dict(correctDictionary.get("allin", []))
         correct=True
         for idx, buttonArr in enumerate(self.buttonPushMap):
             for idx2, button in enumerate(buttonArr):
                 raiseScale = button.getRaiseScale()
                 callScale = button.getCallScale()
+                allinScale = button.getAllinScale()
                 hand = self.comboMap[idx][idx2]
                 if hand in correctDictionaryRaise:
                     correctScale = correctDictionaryRaise[hand]
@@ -339,6 +382,17 @@ class ChartTrainer():
                         continue
                 else:
                     if callScale > self.tol:
+                        button.markIncorrect()
+                        correct=False
+                        continue
+                if hand in correctDictionaryAllin:
+                    correctScale = correctDictionaryAllin[hand]
+                    if allinScale > correctScale + self.tol or allinScale < correctScale - self.tol:
+                        button.markIncorrect()
+                        correct=False
+                        continue
+                else:
+                    if allinScale > self.tol:
                         button.markIncorrect()
                         correct=False
                         continue

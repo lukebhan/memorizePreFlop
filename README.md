@@ -15,21 +15,49 @@ Memorize Preflop is a simple tool for memorizing preflop ranges. It has a range 
 Please checkout this youtube <a href="https://www.youtube.com/watch?v=jHXeO7m5CgQ"> video</a> for a simple example on how Memorize Preflop can be used!
 
 # Installation
+
+Prebuilt binaries live in the [`builds/`](builds/) folder. They are produced by
+the **Build binaries** GitHub Actions workflow ([`.github/workflows/build.yml`](.github/workflows/build.yml)),
+which builds Windows, macOS and Linux natively (PyInstaller cannot
+cross-compile) — run it from the Actions tab or push a version tag to
+regenerate fresh binaries for all three platforms. You can also build any of
+them yourself with `python build.py` on the matching OS.
+
 ## Windows
 
-<a id="raw-url" href="https://raw.githubusercontent.com/lukebhan/memorizePreFlop/master/builds/MemorizePreflopWindows.zip">Windows</a>
+Download **[MemorizePreflopWindows.zip](https://raw.githubusercontent.com/lukebhan/memorizePreFlop/main/builds/MemorizePreflopWindows.zip)**, extract the folder, and run the file titled `MemorizePreflop`. That's it.
 
-Windows installation is the easiest. Just click the link above and extract the folder. Then to run the application, just click on the file titled Memorize Preflop. 
+## MacOS
 
-## MacOS and Linux
-Currently, MacOS and Linux binaries are not available (Will be available in early January!). However, it is still very easy to build from source, but one will need a few dependencies: Python, Numpy and PyQT5. A simple list of steps to follow are listed here (Folks familiar with programming can easily just run the sol.py file in src folder if they have dependencies installed):
+### (a) Download the binary (recommended)
+Download **[MemorizePreflopMacOS.zip](https://raw.githubusercontent.com/lukebhan/memorizePreFlop/main/builds/MemorizePreflopMacOS.zip)**, extract it, open the `MemorizePreflop` folder, and run `MemorizePreflop`. The build is unsigned, so on first launch right-click the executable and choose **Open** to get past Gatekeeper. (This binary targets Apple Silicon; on an Intel Mac, build from source below.)
+
+### (b) Build from source
+Building from source only needs Python, Numpy and PyQT5:
 1. Install python through Anaconda <a href="https://www.anaconda.com/products/distribution"> Anaconda Install </a>
 2. Open your terminal in finder. On Mac, press command space bar and search terminal.
-3. (Optional) Create a virtual env: ```conda create -n memorizePreflop python=3.8'''
+3. (Optional) Create a virtual env: ```conda create -n memorizePreflop python=3.8```
 4. Install Dependencies:
   a) ```conda install PyQt```
   b) ```conda install numpy```
 5. Download the source. The easiest way is through git: ```git clone https://github.com/lukebhan/memorizePreFlop.git```
+6. Navigate to folder. ```cd memorizePreFlop/src```
+7. Run the application ```python sol.py```
+
+## Linux
+
+### (a) Download the binary (recommended)
+Download **[MemorizePreflopLinux.zip](https://raw.githubusercontent.com/lukebhan/memorizePreFlop/main/builds/MemorizePreflopLinux.zip)** (attached to the [latest Release](https://github.com/lukebhan/memorizePreFlop/releases/latest) and produced by CI), extract it, open the `MemorizePreflop` folder, and run `MemorizePreflop`.
+
+### (b) Build from source
+Identical to the macOS source steps above (Python, Numpy and PyQT5):
+1. Install python through Anaconda <a href="https://www.anaconda.com/products/distribution"> Anaconda Install </a>
+2. Open a terminal.
+3. (Optional) Create a virtual env: ```conda create -n memorizePreflop python=3.8```
+4. Install Dependencies:
+  a) ```conda install PyQt```
+  b) ```conda install numpy```
+5. Download the source: ```git clone https://github.com/lukebhan/memorizePreFlop.git```
 6. Navigate to folder. ```cd memorizePreFlop/src```
 7. Run the application ```python sol.py```
 

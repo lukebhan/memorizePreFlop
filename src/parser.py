@@ -35,10 +35,15 @@ def parseLine(line):
     splitLine = line.split(";")
     ret["raise"] = tokenizeHands(splitLine[0])
     # need newline incase of depends
-    if splitLine[1] != ' ' and splitLine[1] != ' \n':
+    if len(splitLine) > 1 and splitLine[1].strip() != '':
         ret["call"] = tokenizeHands(splitLine[1])
     else:
         ret["call"] = []
+    # All-In section is optional so older two-section files still parse
+    if len(splitLine) > 2 and splitLine[2].strip() != '':
+        ret["allin"] = tokenizeHands(splitLine[2])
+    else:
+        ret["allin"] = []
     return ret
 
 def parseLines(filename):
@@ -70,46 +75,47 @@ def parseDepends(line):
             arr.append(line[i])
     return arr
             
+def writeSection(f, arr, trailing):
+    curWeight = None
+    for idx, item in enumerate(arr):
+        itemWeight = item[1]
+        if curWeight is None or curWeight != itemWeight:
+            curWeight = itemWeight
+            f.write("W" + str(curWeight) + ": ")
+        if idx != len(arr)-1:
+            f.write(item[0] + ", ")
+        else:
+            # no comma for last value
+            f.write(item[0])
+    f.write(trailing)
+
 def parseDictionaryToFile(filename, dictionary, dependencyFile=None):
     try:
         raiseArr = dictionary["raise"]
         callArr = dictionary["call"]
+        allinArr = dictionary.get("allin", [])
         f = open(filename, 'w')
-        curWeight = None
-        for idx, item in enumerate(raiseArr):
-            itemWeight = item[1]
-            if curWeight is None or curWeight != itemWeight:
-                curWeight = itemWeight
-                f.write("W" + str(curWeight) + ": ")
-            if idx != len(raiseArr)-1:
-                f.write(item[0] + ", ")
-            else:
-                f.write(item[0] + "; ")
-            # no comma for last value
-        curWeight = None
-        for idx, item in enumerate(callArr):
-            itemWeight = item[1]
-            if curWeight is None or curWeight != itemWeight:
-                curWeight = itemWeight
-                f.write("W" + str(curWeight) + ": ")
-            if idx != len(callArr)-1:
-                f.write(item[0] + ", ")
-            else:
-                f.write(item[0])
+        # Sections are separated by ';' -> raise; call; allin
+        writeSection(f, raiseArr, "; ")
+        writeSection(f, callArr, "; ")
+        writeSection(f, allinArr, "")
         if dependencyFile is not None:
             res, success = parseLines(dependencyFile)
             if success:
                 # Build dependency array
                 depArr = []
                 for key in res["raise"]:
-                    depArr.append(key[0]) 
+                    depArr.append(key[0])
                 if res["call"] is not None:
                     for key in res["call"]:
                         if key not in depArr:
                             depArr.append(key[0])
+                for key in res.get("allin", []):
+                    if key not in depArr:
+                        depArr.append(key[0])
                 f.write("\nDepends: ")
                 for key in depArr:
-                    f.write(key + " ") 
+                    f.write(key + " ")
             else:
                 return False
         f.close()

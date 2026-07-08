@@ -35,7 +35,7 @@ class TrainingReports():
 
     def buildLeftLayout(self):
         leftLayout = QVBoxLayout()
-        leftLayout.setContentsMargins(70, 20, 70, 10)
+        leftLayout.setContentsMargins(20, 20, 20, 10)
         self.rangeLabel = QLabel("Total Report", alignment=Qt.AlignCenter)
         leftLayout.addWidget(self.rangeLabel, 1)
         leftLayout.addWidget(self.buildButtonLayout(), 6)
@@ -144,6 +144,7 @@ class TrainingReports():
         buttonMainLayout.setContentsMargins(3, 3, 3, 3)
 
         self.buttonWidget = QWidget()
+        self.buttonWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.buttonWidget.setLayout(buttonMainLayout)
 
         # Build out button matrix 
@@ -182,7 +183,7 @@ class TrainingReports():
         self.loadReport()
 
     def buildStatisticsTable(self):
-        self.table = QTableWidget(0, 12)
+        self.table = QTableWidget(0, 16)
         self.tableLayout = QHBoxLayout()
         #self.tableLayout.setContentsMargins(0, 20, 0, 20)
         self.tableLayout.addWidget(self.table)
@@ -199,6 +200,9 @@ class TrainingReports():
         self.table.setHorizontalHeaderItem(10, QTableWidgetItem("Number\n Fold Hands "))
         self.table.setHorizontalHeaderItem(11, QTableWidgetItem("Number\n Fold Correct "))
         self.table.setHorizontalHeaderItem(12, QTableWidgetItem("Percent\n Fold Correct "))
+        self.table.setHorizontalHeaderItem(13, QTableWidgetItem("Number\n All-In Hands "))
+        self.table.setHorizontalHeaderItem(14, QTableWidgetItem("Number\n All-In Correct "))
+        self.table.setHorizontalHeaderItem(15, QTableWidgetItem("Percent\n All-In Correct "))
         self.table.horizontalHeader().setFont(self.font(12))
         self.table.setFont(self.font(12))
         #self.table.resizeColumnsToContents()
@@ -228,6 +232,9 @@ class TrainingReports():
                 self.table.setItem(idx, 10, self.makeTableItem(self.curReport["data"][key]["statistics"]["foldNumberOfHands"]))
                 self.table.setItem(idx, 11, self.makeTableItem(self.curReport["data"][key]["statistics"]["foldNumberOfHandsCorrect"]))
                 self.table.setItem(idx, 12, self.makePercentTableItem(self.curReport["data"][key]["statistics"]["foldNumberOfHandsCorrect"], self.curReport["data"][key]["statistics"]["foldNumberOfHands"]))
+                self.table.setItem(idx, 13, self.makeTableItem(self.curReport["data"][key]["statistics"]["allinNumberOfHands"]))
+                self.table.setItem(idx, 14, self.makeTableItem(self.curReport["data"][key]["statistics"]["allinNumberOfHandsCorrect"]))
+                self.table.setItem(idx, 15, self.makePercentTableItem(self.curReport["data"][key]["statistics"]["allinNumberOfHandsCorrect"], self.curReport["data"][key]["statistics"]["allinNumberOfHands"]))
 
     def makePercentTableItem(self, num, dom):
         if dom == 0:
@@ -260,15 +267,22 @@ class TrainingReports():
                     self.buttonPushMap[i][j].updateButton(total[i][j], correct[i][j])
         # Get Call
         elif col >= 7 and col < 10:
-            total = self.curReport["data"][key]["handCallArrAttempt"]    
-            correct = self.curReport["data"][key]["handCallArrCorrect"]    
+            total = self.curReport["data"][key]["handCallArrAttempt"]
+            correct = self.curReport["data"][key]["handCallArrCorrect"]
             for i in range(13):
                 for j in range(13):
                     self.buttonPushMap[i][j].updateButton(total[i][j], correct[i][j])
         # Get Fold
+        elif col >= 10 and col < 13:
+            total = self.curReport["data"][key]["handFoldArrAttempt"]
+            correct = self.curReport["data"][key]["handFoldArrCorrect"]
+            for i in range(13):
+                for j in range(13):
+                    self.buttonPushMap[i][j].updateButton(total[i][j], correct[i][j])
+        # Get All-In
         else:
-            total = self.curReport["data"][key]["handFoldArrAttempt"]    
-            correct = self.curReport["data"][key]["handFoldArrCorrect"]    
+            total = self.curReport["data"][key]["handAllinArrAttempt"]
+            correct = self.curReport["data"][key]["handAllinArrCorrect"]
             for i in range(13):
                 for j in range(13):
                     self.buttonPushMap[i][j].updateButton(total[i][j], correct[i][j])
