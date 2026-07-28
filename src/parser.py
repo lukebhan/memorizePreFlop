@@ -33,7 +33,12 @@ def tokenizeHands(ranges):
 def parseLine(line):
     ret = {}
     splitLine = line.split(";")
-    ret["raise"] = tokenizeHands(splitLine[0])
+    # Raise section can be empty (file starts with ';') when a chart has only
+    # calls and/or all-ins, so guard it like the call and all-in sections.
+    if splitLine[0].strip() != '':
+        ret["raise"] = tokenizeHands(splitLine[0])
+    else:
+        ret["raise"] = []
     # need newline incase of depends
     if len(splitLine) > 1 and splitLine[1].strip() != '':
         ret["call"] = tokenizeHands(splitLine[1])
